@@ -7,10 +7,15 @@ import { DeployGame } from './components/DeployGame';
 import { CommandPalette } from './components/CommandPalette';
 import { GitHistory } from './components/GitHistory';
 import { KonamiEasterEgg } from './components/KonamiEasterEgg';
-import { HexSkillHive } from './components/HexSkillHive';
 import { ParticleNetwork } from './components/ParticleNetwork';
 import { ScrambleText } from './components/ScrambleText';
 import { TracingBeams } from './components/TracingBeams';
+
+// New Sections
+import { LogStreamBackground } from './components/LogStreamBackground';
+import { BuildSection } from './components/BuildSection';
+import { TestSection } from './components/TestSection';
+import { StatusPage } from './components/StatusPage';
 
 function App() {
   const container: Variants = {
@@ -33,6 +38,7 @@ function App() {
     <div className="min-h-screen bg-[#050505] text-white selection:bg-cyan-500/30 overflow-x-hidden relative">
       {/* Navigation & Tools */}
       <PipelineNav />
+      <LogStreamBackground />
       <TerminalModal />
       <CommandPalette />
       <KonamiEasterEgg />
@@ -41,10 +47,10 @@ function App() {
       <TracingBeams />
 
       {/* Main Content */}
-      <main className="relative z-10 w-full">
+      <main className="relative z-10 w-full snap-y snap-mandatory scroll-smooth">
           
           {/* Hero Section (Build) */}
-          <section id="hero" className="min-h-screen flex flex-col items-center justify-center px-6 py-20 relative">
+          <section id="hero" className="min-h-screen flex flex-col items-center justify-center px-6 py-20 relative snap-start">
             <ParticleNetwork />
             <motion.div 
               variants={container}
@@ -89,8 +95,8 @@ function App() {
             </motion.div>
           </section>
 
-          {/* Commit History Section */}
-          <section id="history" className="py-32 px-6 max-w-7xl mx-auto">
+          {/* Commit History Section (Source) */}
+          <section id="history" className="py-32 px-6 max-w-7xl mx-auto snap-start">
             <motion.div 
               initial={{ opacity: 0, y: 50 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -103,26 +109,14 @@ function App() {
             <GitHistory />
           </section>
 
-          {/* Test Section (Skills Hive) */}
-          <section id="skills" className="py-32 px-6 max-w-7xl mx-auto">
-            <motion.div 
-              initial={{ opacity: 0, y: 50 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-100px" }}
-              transition={{ duration: 0.8 }}
-              className="mb-16 text-center"
-            >
-              <h2 className="text-4xl md:text-5xl font-bold mb-6">Technical <span className="text-gradient">Hive</span></h2>
-              <p className="text-gray-400 text-lg max-w-xl mx-auto">
-                Structured expertise in modern infrastructure. Hover to activate nodes.
-              </p>
-            </motion.div>
+          {/* Build Section */}
+          <BuildSection className="snap-start" />
 
-            <HexSkillHive />
-          </section>
+          {/* Test Section */}
+          <TestSection className="snap-start" />
 
           {/* Deploy Section (Game) */}
-          <section id="game" className="py-32 px-6 border-t border-white/5 bg-gradient-to-b from-black to-red-900/10 text-center">
+          <section id="game" className="py-32 px-6 border-t border-white/5 bg-gradient-to-b from-black to-red-900/10 text-center snap-start">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               whileInView={{ opacity: 1, scale: 1 }}
@@ -132,6 +126,11 @@ function App() {
               <p className="text-gray-400 mb-8">Warning: Production environment is unstable.</p>
               <DeployGame />
             </motion.div>
+          </section>
+
+          {/* Monitor Section */}
+          <section id="monitor" className="snap-start">
+            <StatusPage />
           </section>
 
         </main>

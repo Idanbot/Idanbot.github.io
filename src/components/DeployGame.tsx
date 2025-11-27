@@ -235,11 +235,39 @@ export const DeployGame = () => {
                     )}
                     {gameStatus === 'playing' && (
                        <div className="flex gap-2">
-                         {['←', '↓', '↑', '→'].map((arrow) => (
-                           <div key={arrow} className="w-8 h-8 border border-white/20 rounded flex items-center justify-center text-white/20 font-mono text-xs">
-                             {arrow}
-                           </div>
-                         ))}
+                         {['←', '↓', '↑', '→'].map((arrow) => {
+                           let label = '';
+                           let newDirection = '';
+                           switch (arrow) {
+                             case '←': label = 'Move Left'; newDirection = 'LEFT'; break;
+                             case '↓': label = 'Move Down'; newDirection = 'DOWN'; break;
+                             case '↑': label = 'Move Up'; newDirection = 'UP'; break;
+                             case '→': label = 'Move Right'; newDirection = 'RIGHT'; break;
+                           }
+
+                           const handleArrowClick = () => {
+                             if (gameStatus !== 'playing') return;
+                             const currentDir = currentMoveDir.current;
+
+                             switch (newDirection) {
+                               case 'UP': if (currentDir !== 'DOWN') setDirection('UP'); break;
+                               case 'DOWN': if (currentDir !== 'UP') setDirection('DOWN'); break;
+                               case 'LEFT': if (currentDir !== 'RIGHT') setDirection('LEFT'); break;
+                               case 'RIGHT': if (currentDir !== 'LEFT') setDirection('RIGHT'); break;
+                             }
+                           };
+
+                           return (
+                             <button 
+                               key={arrow} 
+                               onClick={handleArrowClick}
+                               aria-label={label}
+                               className="w-8 h-8 border border-green-500 hover:bg-green-500/20 rounded flex items-center justify-center text-green-400 font-mono text-xs cursor-pointer transition-colors"
+                             >
+                               {arrow}
+                             </button>
+                           );
+                         })}
                        </div>
                     )}
                     {gameStatus === 'gameover' && (

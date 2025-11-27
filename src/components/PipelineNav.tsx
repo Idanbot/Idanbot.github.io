@@ -3,10 +3,12 @@ import { motion } from 'framer-motion';
 import { CheckCircle2, Circle, Loader2 } from 'lucide-react';
 
 const sections = [
-  { id: 'hero', label: 'Source' },
-  { id: 'stats', label: 'Build' },
-  { id: 'skills', label: 'Test' },
+  { id: 'hero', label: 'Init' },
+  { id: 'history', label: 'Source' },
+  { id: 'build', label: 'Build' },
+  { id: 'test', label: 'Test' },
   { id: 'game', label: 'Deploy' },
+  { id: 'monitor', label: 'Monitor' },
 ];
 
 export const PipelineNav = () => {
@@ -50,18 +52,18 @@ export const PipelineNav = () => {
             <div className={`
               relative z-10 w-6 h-6 rounded-full flex items-center justify-center
               bg-[#050505] border-2 transition-colors duration-300
-              ${isActive ? 'border-cyan-400 text-cyan-400' : 
-                isPast ? 'border-green-400 text-green-400' : 
+              ${isActive && id !== 'monitor' ? 'border-cyan-400 text-cyan-400' : 
+                isPast || (isActive && id === 'monitor') ? 'border-green-400 text-green-400' : 
                 'border-white/20 text-white/20'}
             `}>
-              {isPast ? <CheckCircle2 size={14} /> : 
+              {isPast || (id === 'monitor' && isActive) ? <CheckCircle2 size={14} /> : 
                isActive ? <Loader2 size={14} className="animate-spin" /> : 
                <Circle size={14} />}
             </div>
             <span className={`
               text-sm font-mono tracking-wider transition-colors duration-300
-              ${isActive ? 'text-cyan-400' : 
-                isPast ? 'text-green-400' : 
+              ${isActive && id !== 'monitor' ? 'text-cyan-400' : 
+                isPast || (isActive && id === 'monitor') ? 'text-green-400' : 
                 'text-gray-500'}
             `}>
               {label}
