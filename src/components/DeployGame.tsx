@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, TouchEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { AlertTriangle, Play, RotateCcw, Trophy, Terminal, Lock } from 'lucide-react';
 
@@ -17,6 +17,7 @@ export const DeployGame = () => {
   const gameLoopRef = useRef<number | null>(null);
 
   const currentMoveDir = useRef<string>('RIGHT');
+  const touchStart = useRef<{x: number, y: number} | null>(null);
 
   const startGame = () => {
     setSnake([[10, 10], [9, 10], [8, 10]]);
@@ -112,6 +113,44 @@ export const DeployGame = () => {
     return () => window.removeEventListener('keydown', handleKey);
   }, [isModalOpen]);
 
+  const handleTouchStart = (e: TouchEvent<HTMLDivElement>) => {
+    touchStart.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+  };
+
+  const handleTouchEnd = (e: TouchEvent<HTMLDivElement>) => {
+    if (!touchStart.current) return;
+
+    const touchEnd = {
+      x: e.changedTouches[0].clientX,
+      y: e.changedTouches[0].clientY
+    };
+
+    const diffX = touchStart.current.x - touchEnd.x;
+    const diffY = touchStart.current.y - touchEnd.y;
+
+    const currentDir = currentMoveDir.current;
+
+    if (Math.abs(diffX) < 30 && Math.abs(diffY) < 30) return;
+
+    if (Math.abs(diffX) > Math.abs(diffY)) {
+      if (diffX > 0) {
+        if (currentDir !== 'RIGHT') setDirection('LEFT');
+      } else {
+        if (currentDir !== 'LEFT') setDirection('RIGHT');
+      }
+    } else {
+      if (diffY > 0) {
+        if (currentDir !== 'DOWN') setDirection('UP');
+      } else {
+        if (currentDir !== 'UP') setDirection('DOWN');
+      }
+    }
+    touchStart.current = null;
+  };
+
   return (
     <>
       <div className="flex justify-center py-12">
@@ -171,7 +210,9 @@ export const DeployGame = () => {
 
                   <div 
                     className="relative bg-black border-2 border-green-900 shadow-[0_0_20px_rgba(0,255,0,0.1)]"
-                    style={{ width: GRID_SIZE * CELL_SIZE, height: GRID_SIZE * CELL_SIZE }}
+                    style={{ width: GRID_SIZE * CELL_SIZE, height: GRID_SIZE * CELL_SIZE, touchAction: 'none' }}
+                    onTouchStart={handleTouchStart}
+                    onTouchEnd={handleTouchEnd}
                   >
                     {gameStatus === 'playing' || gameStatus === 'gameover' ? (
                       <>
