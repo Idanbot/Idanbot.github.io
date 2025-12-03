@@ -83,7 +83,7 @@ export const TestSection = ({ className }: { className?: string }) => {
   };
 
   return (
-    <section id="test" className={`py-32 px-6 max-w-7xl mx-auto relative z-10 border-t border-white/5 ${className}`}>
+    <section id="test" className={`py-32 px-6 max-w-7xl mx-auto relative z-40 border-t border-white/5 ${className}`}>
       <div className="flex flex-col md:flex-row items-end justify-between mb-16 gap-6">
         <div>
            <h2 className="text-4xl font-bold mb-6 flex items-center gap-3">
