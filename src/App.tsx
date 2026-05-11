@@ -2,7 +2,6 @@ import React, { Suspense } from 'react';
 import { m, Variants } from 'framer-motion';
 import { FaGithub, FaLinkedin, FaEnvelope } from 'react-icons/fa';
 import { Terminal } from 'lucide-react';
-import { PipelineNav } from './components/PipelineNav';
 import { MobileNav } from './components/MobileNav';
 import { StackSection } from './components/StackSection';
 import { TerminalModal } from './components/TerminalModal';
@@ -51,7 +50,6 @@ function App() {
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
-      <PipelineNav activeSection={activeSection} />
       <MobileNav activeSection={activeSection} />
       <TerminalModal />
       <CommandPalette />
