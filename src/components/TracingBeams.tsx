@@ -1,4 +1,4 @@
-import { motion } from 'framer-motion';
+import { m, useReducedMotion } from 'framer-motion';
 import { memo } from 'react';
 
 const beams = [
@@ -9,20 +9,23 @@ const beams = [
   { x: '90%', duration: 9, delay: 0.5 },
 ];
 
-const _TracingBeams = () => {
+function TracingBeamsInner() {
+  const reduceMotion = useReducedMotion();
+  if (reduceMotion) return null;
+
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
       <svg className="w-full h-full opacity-30">
         <defs>
           <linearGradient id="beam-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="transparent" />
-            <stop offset="50%" stopColor="#06b6d4" />
+            <stop offset="50%" stopColor="#d92121" />
             <stop offset="100%" stopColor="transparent" />
           </linearGradient>
         </defs>
 
         {beams.map((beam, i) => (
-          <motion.line
+          <m.line
             key={i}
             x1={beam.x}
             y1="-20%"
@@ -36,27 +39,29 @@ const _TracingBeams = () => {
             transition={{
               duration: beam.duration,
               repeat: Infinity,
-              ease: "linear",
-              delay: beam.delay
+              ease: 'linear',
+              delay: beam.delay,
             }}
           />
         ))}
 
-        {/* Diagonal Beam */}
-        <motion.line
-          x1="0" y1="0" x2="100%" y2="100%"
+        <m.line
+          x1="0"
+          y1="0"
+          x2="100%"
+          y2="100%"
           stroke="url(#beam-gradient)"
           strokeWidth="2"
           strokeDasharray="200 2000"
           initial={{ strokeDashoffset: 0 }}
           animate={{ strokeDashoffset: -2200 }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
           opacity="0.5"
         />
       </svg>
     </div>
   );
-};
+}
 
-export const TracingBeams = memo(_TracingBeams);
+export const TracingBeams = memo(TracingBeamsInner);
 TracingBeams.displayName = 'TracingBeams';

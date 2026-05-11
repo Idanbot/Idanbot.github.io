@@ -1,15 +1,33 @@
 import { useEffect, useState } from 'react';
 import { Command } from 'cmdk';
-import { Search, Terminal, Github, Linkedin, Mail, FileText, Layers, Gamepad2 } from 'lucide-react';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { OPEN_TERMINAL_EVENT } from '@/lib/site-events';
+import {
+  Search,
+  Terminal,
+  Github,
+  Linkedin,
+  Mail,
+  FileText,
+  Layers,
+  Activity,
+  Home,
+} from 'lucide-react';
 
 export const CommandPalette = () => {
   const [open, setOpen] = useState(false);
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  const scrollToId = (id: string) => {
+    const el = document.getElementById(id);
+    el?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+  };
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
       if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
         e.preventDefault();
-        setOpen((open) => !open);
+        setOpen((o) => !o);
       }
     };
 
@@ -27,49 +45,87 @@ export const CommandPalette = () => {
       open={open}
       onOpenChange={setOpen}
       label="Global Command Menu"
-      className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-[640px] bg-[#0c0c0c] border border-white/10 rounded-xl shadow-2xl p-2 z-[999]"
-      overlayClassName="fixed inset-0 bg-black/80 backdrop-blur-sm z-[998]"
+      className="fixed top-1/2 left-1/2 z-[999] w-[min(100vw-1.5rem,640px)] max-h-[min(85dvh,560px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-white/10 bg-card p-2 shadow-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      overlayClassName="fixed inset-0 z-[998] bg-black/80 backdrop-blur-sm"
     >
       <div className="flex items-center border-b border-white/10 px-3 pb-2 mb-2">
-        <Search className="w-5 h-5 text-gray-500 mr-2" />
-        <Command.Input 
-          className="w-full bg-transparent border-none outline-none text-white placeholder-gray-500 h-10"
-          placeholder="Type a command or search..."
+        <Search className="mr-2 h-5 w-5 shrink-0 text-gray-500" />
+        <Command.Input
+          className="h-10 w-full border-none bg-transparent text-base text-white outline-none placeholder:text-gray-500"
+          placeholder="Jump to section or open link…"
         />
       </div>
-      
-      <Command.List className="max-h-[300px] overflow-y-auto p-1">
-        <Command.Empty className="py-6 text-center text-gray-500 text-sm">No results found.</Command.Empty>
 
-        <Command.Group heading="Navigation" className="text-gray-500 text-xs font-medium mb-2 px-2">
-          <Command.Item onSelect={() => runCommand(() => document.getElementById('hero')?.scrollIntoView({ behavior: 'smooth' }))} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-white/10 text-gray-300 cursor-pointer transition-colors aria-selected:bg-white/10 aria-selected:text-white">
+      <Command.List className="max-h-[min(50vh,320px)] overflow-y-auto overscroll-contain p-1">
+        <Command.Empty className="px-4 py-8 text-center text-sm leading-relaxed text-gray-400">
+          <span className="font-medium text-gray-300">No matches.</span>
+          <span className="mt-2 block text-xs text-gray-500">
+            Try another query, pick a section from Navigation, or press Esc to close.
+          </span>
+        </Command.Empty>
+
+        <Command.Group heading="Navigation" className="mb-2 px-2 text-xs font-medium text-gray-500">
+          <Command.Item
+            onSelect={() =>
+              runCommand(() => window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT)))
+            }
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
             <Terminal size={16} />
+            <span>Open terminal</span>
+            <kbd className="ml-auto rounded border border-white/15 bg-black/40 px-1.5 py-0.5 font-mono text-[10px] text-gray-500">
+              ~
+            </kbd>
+          </Command.Item>
+          <Command.Item
+            onSelect={() => runCommand(() => scrollToId('hero'))}
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            <Home size={16} />
             <span>Go to Hero</span>
           </Command.Item>
-          <Command.Item onSelect={() => runCommand(() => document.getElementById('history')?.scrollIntoView({ behavior: 'smooth' }))} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-white/10 text-gray-300 cursor-pointer transition-colors aria-selected:bg-white/10 aria-selected:text-white">
-            <FileText size={16} />
-            <span>Go to History</span>
-          </Command.Item>
-           <Command.Item onSelect={() => runCommand(() => document.getElementById('skills')?.scrollIntoView({ behavior: 'smooth' }))} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-white/10 text-gray-300 cursor-pointer transition-colors aria-selected:bg-white/10 aria-selected:text-white">
+          <Command.Item
+            onSelect={() => runCommand(() => scrollToId('skills'))}
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
             <Layers size={16} />
             <span>Go to Stack</span>
           </Command.Item>
-          <Command.Item onSelect={() => runCommand(() => document.getElementById('game')?.scrollIntoView({ behavior: 'smooth' }))} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-white/10 text-gray-300 cursor-pointer transition-colors aria-selected:bg-white/10 aria-selected:text-white">
-            <Gamepad2 size={16} />
-            <span>Go to Deploy Game</span>
+          <Command.Item
+            onSelect={() => runCommand(() => scrollToId('history'))}
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            <FileText size={16} />
+            <span>Go to History</span>
+          </Command.Item>
+          <Command.Item
+            onSelect={() => runCommand(() => scrollToId('monitor'))}
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            <Activity size={16} />
+            <span>Go to Site info</span>
           </Command.Item>
         </Command.Group>
 
-        <Command.Group heading="Socials" className="text-gray-500 text-xs font-medium mb-2 px-2 mt-2">
-          <Command.Item onSelect={() => runCommand(() => window.open('https://github.com/Idanbot', '_blank'))} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-white/10 text-gray-300 cursor-pointer transition-colors aria-selected:bg-white/10 aria-selected:text-white">
+        <Command.Group heading="Socials" className="mt-2 px-2 text-xs font-medium text-gray-500">
+          <Command.Item
+            onSelect={() => runCommand(() => window.open('https://github.com/Idanbot', '_blank'))}
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
             <Github size={16} />
             <span>GitHub</span>
           </Command.Item>
-          <Command.Item onSelect={() => runCommand(() => window.open('https://www.linkedin.com/in/idanbotbol/', '_blank'))} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-white/10 text-gray-300 cursor-pointer transition-colors aria-selected:bg-white/10 aria-selected:text-white">
+          <Command.Item
+            onSelect={() => runCommand(() => window.open('https://www.linkedin.com/in/idanbotbol/', '_blank'))}
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
             <Linkedin size={16} />
             <span>LinkedIn</span>
           </Command.Item>
-          <Command.Item onSelect={() => runCommand(() => window.open('mailto:idan@idanbot.uk', '_blank'))} className="flex items-center gap-2 px-2 py-2 rounded hover:bg-white/10 text-gray-300 cursor-pointer transition-colors aria-selected:bg-white/10 aria-selected:text-white">
+          <Command.Item
+            onSelect={() => runCommand(() => { window.location.href = 'mailto:idan@idanbot.uk'; })}
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
             <Mail size={16} />
             <span>Email</span>
           </Command.Item>

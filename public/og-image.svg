@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="ogTitle ogDesc">
+  <title id="ogTitle">Idan Botbol  DevOps &amp; Backend Developer</title>
+  <desc id="ogDesc">Portfolio card: DevOps, cloud, and reliable systems.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0b0c10"/>
+      <stop offset="55%" stop-color="#12151c"/>
+      <stop offset="100%" stop-color="#191c24"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#d92121"/>
+      <stop offset="50%" stop-color="#ff5a5a"/>
+      <stop offset="100%" stop-color="#e0e0e0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#bg)"/>
+  <rect x="0" y="0" width="1200" height="6" fill="#d92121" opacity="0.9"/>
+  <circle cx="1020" cy="120" r="220" fill="#d92121" opacity="0.08"/>
+  <circle cx="1080" cy="520" r="180" fill="#1f2833" opacity="0.6"/>
+  <text x="72" y="200" fill="#8e929c" font-family="ui-sans-serif, system-ui, sans-serif" font-size="28" font-weight="600" letter-spacing="0.12em">
+    PORTFOLIO
+  </text>
+  <text x="72" y="310" fill="url(#accent)" font-family="ui-sans-serif, system-ui, sans-serif" font-size="76" font-weight="800" letter-spacing="-0.03em">
+    Idan Botbol
+  </text>
+  <text x="72" y="390" fill="#c5c6c7" font-family="ui-sans-serif, system-ui, sans-serif" font-size="34" font-weight="500">
+    DevOps Engineer &amp; Backend Developer
+  </text>
+  <text x="72" y="458" fill="#8e929c" font-family="ui-sans-serif, system-ui, sans-serif" font-size="26" font-weight="400">
+    Kubernetes ù AWS ù GCP ù Automation ù idanbot.me
+  </text>
+  <rect x="72" y="520" width="200" height="5" rx="2" fill="#d92121" opacity="0.85"/>
+</svg>

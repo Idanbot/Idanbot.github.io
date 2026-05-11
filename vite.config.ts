@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
@@ -11,7 +12,25 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  test: {
+    environment: 'jsdom',
+    include: ['src/**/*.{test,spec}.{ts,tsx}'],
+    globals: false,
+    passWithNoTests: true,
+  },
   build: {
     outDir: 'dist',
-  }
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('node_modules')) return;
+          if (id.includes('@tsparticles')) return 'tsparticles';
+          if (id.includes('framer-motion')) return 'framer-motion';
+          if (id.includes('cmdk')) return 'cmdk';
+          if (id.includes('lucide-react')) return 'lucide';
+          if (id.includes('react-icons')) return 'react-icons';
+        },
+      },
+    },
+  },
 })

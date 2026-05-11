@@ -1,51 +1,66 @@
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { CheckCircle2, Circle, Loader2 } from 'lucide-react';
 
 const sections = [
   { id: 'hero', label: 'Init' },
+  { id: 'skills', label: 'Stack' },
   { id: 'history', label: 'Source' },
-  { id: 'build', label: 'Build' },
-  { id: 'test', label: 'Test' },
-  { id: 'game', label: 'Deploy' },
   { id: 'monitor', label: 'Monitor' },
 ];
 
 export const PipelineNav = ({ activeSection }: { activeSection: string }) => {
   return (
-    <div className="fixed right-6 top-1/2 -translate-y-1/2 z-50 hidden lg:flex flex-col gap-8 p-6 rounded-2xl bg-black/20 shadow-2xl items-end">
-      <div className="absolute right-[35px] top-10 bottom-10 w-0.5 bg-white/10" />
+    <div className="fixed right-4 xl:right-6 top-1/2 z-50 hidden -translate-y-1/2 flex-col gap-5 rounded-2xl bg-black/25 p-4 shadow-2xl backdrop-blur-md lg:flex xl:gap-6 xl:p-6 items-end">
+      <div className="absolute right-[31px] top-8 bottom-8 w-0.5 bg-white/10 xl:right-[35px] xl:top-10 xl:bottom-10" />
       {sections.map(({ id, label }, index) => {
         const isActive = activeSection === id;
-        const isPast = sections.findIndex(s => s.id === activeSection) > index;
+        const activeIdx = sections.findIndex((s) => s.id === activeSection);
+        const isPast = activeIdx > index;
 
         return (
-          <motion.a
+          <m.a
             key={id}
             href={`#${id}`}
-            className="relative flex items-center gap-4 group"
+            className="group relative flex min-h-11 min-w-0 items-center gap-3 rounded-lg py-2 pl-2 pr-2 outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background xl:gap-4 xl:pr-3"
             initial={false}
-            animate={{ opacity: isActive || isPast ? 1 : 0.5 }}
+            animate={{ opacity: isActive || isPast ? 1 : 0.45 }}
           >
-            <span className={`
-              text-sm font-mono tracking-wider transition-colors duration-300
-              ${isActive && id !== 'monitor' ? 'text-cyan-300' :
-                isPast || (isActive && id === 'monitor') ? 'text-green-300' :
-                  'text-gray-100'}
-            `}>
+            <span
+              className={`
+              text-xs xl:text-sm font-mono tracking-wider transition-colors duration-300
+              ${
+                isActive && id !== 'monitor'
+                  ? 'text-primary'
+                  : isPast || (isActive && id === 'monitor')
+                    ? 'text-emerald-400'
+                    : 'text-foreground/90'
+              }
+            `}
+            >
               {label}
             </span>
-            <div className={`
-              relative z-10 w-6 h-6 rounded-full flex items-center justify-center
-              bg-[#050505] border-2 transition-colors duration-300
-              ${isActive && id !== 'monitor' ? 'border-cyan-400 text-cyan-400' :
-                isPast || (isActive && id === 'monitor') ? 'border-green-400 text-green-400' :
-                  'border-white/20 text-white/20'}
-            `}>
-              {isPast || (id === 'monitor' && isActive) ? <CheckCircle2 size={14} /> :
-                isActive ? <Loader2 size={14} className="animate-spin" /> :
-                  <Circle size={14} />}
+            <div
+              className={`
+              relative z-10 flex h-6 w-6 shrink-0 items-center justify-center rounded-full
+              border-2 bg-background transition-colors duration-300
+              ${
+                isActive && id !== 'monitor'
+                  ? 'border-primary text-primary'
+                  : isPast || (isActive && id === 'monitor')
+                    ? 'border-emerald-500 text-emerald-400'
+                    : 'border-white/20 text-white/20'
+              }
+            `}
+            >
+              {isPast || (id === 'monitor' && isActive) ? (
+                <CheckCircle2 size={14} />
+              ) : isActive ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                <Circle size={14} />
+              )}
             </div>
-          </motion.a>
+          </m.a>
         );
       })}
     </div>

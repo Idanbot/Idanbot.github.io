@@ -1,17 +1,78 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X, Terminal as TerminalIcon } from 'lucide-react';
 import { SystemMonitor } from './SystemMonitor';
+import { OPEN_TERMINAL_EVENT } from '@/lib/site-events';
+
+const TERMINAL_COMMANDS = [
+  'about',
+  'btop',
+  'cat',
+  'clear',
+  'curl',
+  'date',
+  'echo',
+  'exit',
+  'help',
+  'htop',
+  'joke',
+  'ls',
+  'man',
+  'mkdir',
+  'neofetch',
+  'nvim',
+  'ping',
+  'pwd',
+  'repo',
+  'rev',
+  'rm',
+  'skills',
+  'sudo',
+  'tmux',
+  'touch',
+  'uname',
+  'uptime',
+  'vi',
+  'vim',
+  'weather',
+  'whoami',
+].sort((a, b) => a.localeCompare(b));
+
+const VIRTUAL_FILES = ['contact.md', 'roadmap.txt'].sort((a, b) => a.localeCompare(b));
+
+function longestCommonPrefix(strs: string[]): string {
+  if (strs.length === 0) return '';
+  const s0 = strs[0];
+  for (let i = 0; i < s0.length; i++) {
+    const c = s0[i];
+    for (let j = 1; j < strs.length; j++) {
+      if (i >= strs[j].length || strs[j][i] !== c) return s0.slice(0, i);
+    }
+  }
+  return s0;
+}
 
 export const TerminalModal = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [showMonitor, setShowMonitor] = useState(false);
   const [input, setInput] = useState('');
-  const [history, setHistory] = useState<string[]>(['Welcome to IdanBot Term v1.0.0', 'Type "help" for available commands.']);
+  const [history, setHistory] = useState<string[]>([
+    'Welcome to IdanBot Term v1.0.0',
+    'Type "help" for available commands. Press Tab to complete commands or cat(1) filenames.',
+  ]);
   const inputRef = useRef<HTMLInputElement>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
+  const reduceMotionFm = useReducedMotion();
 
   const domainIpMap = useRef<Record<string, string>>({});
+  /** Consecutive Tab presses for cycling when the line is already at the longest common prefix. */
+  const tabCycleRef = useRef(0);
+
+  useEffect(() => {
+    const openFromChrome = () => setIsOpen(true);
+    window.addEventListener(OPEN_TERMINAL_EVENT, openFromChrome);
+    return () => window.removeEventListener(OPEN_TERMINAL_EVENT, openFromChrome);
+  }, []);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -37,7 +98,10 @@ export const TerminalModal = () => {
   }, [isOpen, showMonitor]);
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const smooth =
+      typeof window !== 'undefined' &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    bottomRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
   }, [history]);
 
   const handleCommand = (e: React.FormEvent) => {
@@ -56,7 +120,7 @@ export const TerminalModal = () => {
 
     switch (cmd) {
       case 'help':
-        response = 'Available commands: help, about, skills, clear, exit, date, pwd, ls, echo, repo, whoami, sudo, uptime, ping, weather, tmux, nvim, vim, vi, htop, btop, uname, neofetch, curl, rev, joke, mkdir, touch, rm, cat';
+        response = `Available commands: ${TERMINAL_COMMANDS.join(', ')}\nTip: press Tab to complete commands and \`cat\` filenames.`;
         break;
       case 'echo':
         response = argsString;
@@ -74,17 +138,18 @@ export const TerminalModal = () => {
         response = 'Idan Botbol: DevOps Engineer & Backend Developer specializing in robust infrastructure.';
         break;
       case 'skills':
-        response = 'STACK: Kubernetes, AWS, Terraform, Docker, Linux, Java, Spring Boot, Go, Node.js, React, PostgreSQL';
+        response =
+          'STACK: Kubernetes, Helm, AWS, GCP, Terraform, Docker, Nginx, Argo CD, Linux, Bash, Spring Boot, Go, Python, Java, Node.js, React, TypeScript, PostgreSQL, Redis, Cassandra, RabbitMQ, Kafka, Prometheus, Grafana, Elasticsearch, Datadog';
         break;
       case 'cat':
         if (args[0] === 'contact.md') {
           response = 'Email: idan@idanbot.uk | GitHub: @Idanbot';
-        } else if (args[0] === 'secret_key.pem') {
-          response = '-----BEGIN PRIVATE KEY-----\ncoWJSD5bkVuL0MlPb8Bz/d8Drl7wgLIh3BsWWw94J0KFcGHKPkR+zJoAi1962rlX\nAOh2w1tglkW9qK3CnujJTS/B/sTRojqD6mzJSPPUB0ER/L8H/OByCVZW8Ufbhyl7\nptEmxrEDq7HyhoRCsKMCGfpDF2Xjw3fwcIYrZ3nnIvfsLB1jclXEr9PwfuDFzIQz\nrm4QsnOS+qBQWOh0Zx8i7awsD0XVrPWbLmsmOhml9DaDbh1lF6D1wB+KmFDyb0ym\nutTTpPTKFrg+Zd8jlx241L79JV2eldz9Rh0JpxwTLX1jpf89N1b93AGAGThXMR0X\n-----END PRIVATE KEY-----';
-        } else if (args[0] === 'secret_key.info') {
-          response = 'Don\'t tell anyone but secret_key.pem opens no doors...';
+        } else if (args[0] === 'roadmap.txt') {
+          response =
+            'GCP Professional Cloud Architect (PCA) — see Stack section + Credly badge link for verification.';
         } else {
-          response = `cat: ${args[0] || ''}: No such file or directory`;
+          const name = args[0] || '(missing path)';
+          response = `cat: ${name}: No such file or directory\nHint: try \`cat contact.md\` or \`cat roadmap.txt\`.`;
         }
         break;
       case 'whoami':
@@ -96,7 +161,7 @@ export const TerminalModal = () => {
       case 'uptime':
         response = `up ${Math.floor(performance.now() / 1000)} seconds, 1 user, load average: 0.00, 0.01, 0.05`;
         break;
-      case 'ping':
+      case 'ping': {
         if (!args[0]) {
           response = 'ping: usage error: Destination address required';
           break;
@@ -128,6 +193,7 @@ export const TerminalModal = () => {
         const stats = `\n--- ${target} ping statistics ---\n4 packets transmitted, 4 received, 0% packet loss, time 3004ms\nrtt min/avg/max/mdev = 10.2/25.4/48.1/12.3 ms`;
         response = `PING ${target} (${ip}): 56 data bytes\n${pings}${stats}`;
         break;
+      }
       case 'weather':
         response = 'Cloudy with a chance of serverless functions.';
         break;
@@ -139,9 +205,9 @@ export const TerminalModal = () => {
         break;
       case 'ls':
         if (args.includes('-a')) {
-          response = '.  ..  .config  contact.md  secret_key.pem  secret_key.info';
+          response = '.  ..  .config  contact.md  roadmap.txt';
         } else {
-          response = 'contact.md  secret_key.pem  secret_key.info';
+          response = 'contact.md  roadmap.txt';
         }
         break;
       case 'repo':
@@ -184,7 +250,7 @@ export const TerminalModal = () => {
       case 'rev':
         response = argsString.split('').reverse().join('');
         break;
-      case 'joke':
+      case 'joke': {
         const jokes = [
           "Why do programmers prefer dark mode? Because light attracts bugs.",
           "How many programmers does it take to change a light bulb? None, that's a hardware problem.",
@@ -214,6 +280,7 @@ export const TerminalModal = () => {
         ];
         response = jokes[Math.floor(Math.random() * jokes.length)];
         break;
+      }
       case 'mkdir':
         response = `mkdir: cannot create directory '${args[0] || ''}': Permission denied`;
         break;
@@ -236,29 +303,90 @@ export const TerminalModal = () => {
         setInput('');
         return;
       default:
-        response = `Command not found: ${cmd}`;
+        response = `Command not found: ${cmd}. Type \`help\` to see what this shell understands, or try \`skills\` / \`about\`.`;
     }
 
     setHistory(prev => [...prev, response]);
     setInput('');
   };
 
+  const applyTabCompletion = () => {
+    const line = input;
+    const catFile = line.match(/^(\s*cat\s+)(\S*)$/i);
+    if (catFile) {
+      const prefix = catFile[1];
+      const partial = catFile[2];
+      const partialLower = partial.toLowerCase();
+      const matches = VIRTUAL_FILES.filter((f) => f.toLowerCase().startsWith(partialLower));
+      if (matches.length === 0) {
+        tabCycleRef.current = 0;
+        return;
+      }
+      if (matches.length === 1) {
+        setInput(`${prefix}${matches[0]}`);
+        tabCycleRef.current = 0;
+        return;
+      }
+      const lcp = longestCommonPrefix(matches);
+      if (lcp.length > partial.length) {
+        setInput(`${prefix}${lcp}`);
+        tabCycleRef.current = 0;
+        return;
+      }
+      const idx = tabCycleRef.current % matches.length;
+      setInput(`${prefix}${matches[idx]}`);
+      tabCycleRef.current = idx + 1;
+      return;
+    }
+
+    const cmdOnly = line.match(/^(\s*)(\S*)$/);
+    if (!cmdOnly) {
+      tabCycleRef.current = 0;
+      return;
+    }
+    const indent = cmdOnly[1];
+    const token = cmdOnly[2];
+    const tokenLower = token.toLowerCase();
+    const matches = TERMINAL_COMMANDS.filter((c) => c.startsWith(tokenLower));
+    if (matches.length === 0) {
+      tabCycleRef.current = 0;
+      return;
+    }
+    if (matches.length === 1) {
+      setInput(`${indent}${matches[0]} `);
+      tabCycleRef.current = 0;
+      return;
+    }
+    const lcp = longestCommonPrefix(matches);
+    if (lcp.length > token.length) {
+      setInput(`${indent}${lcp}`);
+      tabCycleRef.current = 0;
+      return;
+    }
+    const idx = tabCycleRef.current % matches.length;
+    setInput(`${indent}${matches[idx]} `);
+    tabCycleRef.current = idx + 1;
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Tab') {
+      tabCycleRef.current = 0;
+      return;
+    }
+    e.preventDefault();
+    if (!isOpen || showMonitor) return;
+    applyTabCompletion();
+  };
+
   return (
     <>
-      <button
-        onClick={() => setIsOpen(true)}
-        aria-label="Open terminal"
-        className="fixed bottom-6 left-6 z-50 p-3 rounded-full bg-black/80 border border-white/20 text-green-400 hover:bg-green-400/20 transition-all"
-      >
-        <TerminalIcon size={20} />
-      </button>
-
       <AnimatePresence>
         {showMonitor && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
+          <m.div
+            initial={reduceMotionFm ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.95 }}
+            exit={reduceMotionFm ? { opacity: 0 } : { opacity: 0, scale: 0.95 }}
+            transition={reduceMotionFm ? { duration: 0.12 } : undefined}
             className="fixed inset-0 z-[200] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:p-10 cursor-pointer"
             onClick={() => setShowMonitor(false)}
           >
@@ -266,46 +394,82 @@ export const TerminalModal = () => {
               <SystemMonitor />
               <p className="text-center text-gray-500 mt-4 animate-pulse">Press any key or click anywhere to close session</p>
             </div>
-          </motion.div>
+          </m.div>
         )}
 
         {isOpen && !showMonitor && (
-          <motion.div
-            initial={{ y: '-100%' }}
-            animate={{ y: 0 }}
-            exit={{ y: '-100%' }}
-            transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed top-0 left-0 right-0 h-[50vh] bg-[#0c0c0c]/95 backdrop-blur-md border-b border-green-500/30 z-[100] shadow-2xl font-mono text-sm md:text-base overflow-hidden flex flex-col"
+          <m.div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Terminal"
+            initial={reduceMotionFm ? { y: 0, opacity: 1 } : { y: '-100%' }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={reduceMotionFm ? { opacity: 0 } : { y: '-100%' }}
+            transition={
+              reduceMotionFm
+                ? { duration: 0.12 }
+                : { type: 'spring', damping: 25, stiffness: 200 }
+            }
+            className="fixed left-0 right-0 top-0 z-[100] flex h-[50vh] flex-col overflow-hidden border-b border-primary/35 bg-card/95 font-mono text-sm shadow-2xl backdrop-blur-md md:text-base"
           >
-            <div className="flex items-center justify-between px-4 py-2 bg-white/5 border-b border-white/5">
-              <span className="text-green-400 flex items-center gap-2">
-                <TerminalIcon size={14} /> idan@portfolio:~
+            <div className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-2">
+              <span className="flex items-center gap-2 text-primary">
+                <TerminalIcon size={14} aria-hidden /> idan@portfolio:~
               </span>
-              <button onClick={() => setIsOpen(false)} className="text-gray-400 hover:text-white">
-                <X size={18} />
+              <button
+                type="button"
+                onClick={() => setIsOpen(false)}
+                aria-label="Close terminal"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/75 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+              >
+                <X size={18} aria-hidden />
               </button>
             </div>
 
-            <div className="flex-1 p-4 overflow-y-auto space-y-2 text-gray-300" onClick={() => inputRef.current?.focus()}>
-              {history.map((line, i) => (
-                <div key={i} className="whitespace-pre-wrap break-words">{line}</div>
-              ))}
+            <div
+              className="flex-1 space-y-2 overflow-y-auto p-4 text-gray-300"
+              onClick={() => inputRef.current?.focus()}
+              aria-live="polite"
+              aria-relevant="additions"
+            >
+              {history.length === 0 ? (
+                <p className="text-sm text-gray-500">
+                  Screen cleared. Type <kbd className="rounded border border-white/15 bg-black/40 px-1 font-mono">help</kbd> to list
+                  commands again.
+                </p>
+              ) : (
+                history.map((line, i) => (
+                  <div key={i} className="whitespace-pre-wrap break-words">
+                    {line}
+                  </div>
+                ))
+              )}
               <div ref={bottomRef} />
             </div>
 
-            <form onSubmit={handleCommand} className="p-4 border-t border-white/10 bg-black/20 flex items-center gap-2">
-              <span className="text-green-400">❯</span>
+            <form
+              onSubmit={handleCommand}
+              className="flex items-center gap-2 border-t border-white/10 bg-black/20 p-4"
+            >
+              <span className="text-primary" aria-hidden>
+                ❯
+              </span>
               <input
                 ref={inputRef}
                 type="text"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                className="flex-1 bg-transparent border-none outline-none text-white placeholder-gray-600"
-                placeholder="Type 'help'..."
+                onChange={(e) => {
+                  tabCycleRef.current = 0;
+                  setInput(e.target.value);
+                }}
+                onKeyDown={handleInputKeyDown}
+                className="flex-1 border-none bg-transparent text-white outline-none placeholder:text-gray-600 focus-visible:ring-0"
+                placeholder="Type 'help'… Tab completes"
+                aria-label="Terminal command input"
                 autoFocus
               />
             </form>
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </>

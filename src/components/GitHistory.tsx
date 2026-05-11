@@ -1,5 +1,6 @@
-import { motion } from 'framer-motion';
-import { GitBranch, Tag } from 'lucide-react';
+import { m } from 'framer-motion';
+import { GitBranch, Inbox, Tag } from 'lucide-react';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 const commits = [
   {
@@ -37,55 +38,82 @@ const commits = [
 ];
 
 export const GitHistory = () => {
-  return (
-    <div className="font-mono max-w-4xl mx-auto p-6">
-      <div className="flex items-center gap-2 mb-8 text-gray-500 border-b border-gray-800 pb-2">
-        <GitBranch size={18} />
-        <span>main</span>
+  const prefersReducedMotion = usePrefersReducedMotion();
+
+  if (commits.length === 0) {
+    return (
+      <div
+        className="mx-auto max-w-4xl rounded-xl border border-white/10 bg-card/40 p-10 text-center font-mono"
+        role="status"
+      >
+        <Inbox className="mx-auto mb-4 size-10 text-muted-foreground" aria-hidden />
+        <p className="text-base font-semibold text-card-foreground">No timeline entries yet</p>
+        <p className="mt-2 text-sm text-muted-foreground">
+          When roles and milestones are loaded here, they will show up as a commit-style history.
+        </p>
       </div>
-      
-      <div className="relative border-l-2 border-gray-800 ml-3 space-y-12">
+    );
+  }
+
+  const nodeClass = (type: string) => {
+    if (type === 'feat') {
+      return 'border-2 border-primary/70 bg-primary shadow-[0_0_14px_-3px_color-mix(in_oklab,var(--primary),transparent)] ring-2 ring-background';
+    }
+    if (type === 'chore') {
+      return 'border-2 border-border bg-muted ring-2 ring-background';
+    }
+    return 'border-2 border-primary/35 bg-secondary ring-2 ring-background';
+  };
+
+  return (
+    <div className="mx-auto max-w-4xl p-6 font-mono">
+      <div className="mb-8 flex items-center gap-2 border-b border-border pb-2 text-muted-foreground">
+        <GitBranch className="text-primary/90" size={18} aria-hidden />
+        <span className="text-foreground/90">main</span>
+      </div>
+
+      <div className="relative ml-3 space-y-12 border-l-2 border-border">
         {commits.map((commit, index) => (
-          <motion.div 
+          <m.div
             key={commit.hash}
-            initial={{ opacity: 0, x: -20 }}
+            initial={prefersReducedMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.2 }}
+            transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.08 }}
             className="relative pl-8"
           >
-            {/* Timeline Node */}
-            <div className={`
-              absolute -left-[9px] top-0 w-4 h-4 rounded-full border-2 
-              ${commit.type === 'feat' ? 'bg-green-500 border-green-900' : 
-                commit.type === 'chore' ? 'bg-blue-500 border-blue-900' : 
-                'bg-purple-500 border-purple-900'}
-            `} />
+            <div
+              className={`absolute -left-[9px] top-0 size-4 rounded-full ${nodeClass(commit.type)}`}
+              aria-hidden
+            />
 
             <div className="group cursor-pointer">
-              <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1 mb-2">
-                <span className="text-yellow-500 text-sm">{commit.hash}</span>
-                <span className="text-gray-400 text-xs">({commit.date})</span>
+              <div className="mb-2 flex flex-wrap items-baseline gap-x-4 gap-y-1">
+                <span className="text-sm text-primary">{commit.hash}</span>
+                <span className="text-xs text-muted-foreground">({commit.date})</span>
                 {commit.tag && (
-                  <span className="flex items-center gap-1 text-xs bg-white/5 px-2 py-0.5 rounded text-gray-300 border border-white/10">
-                    <Tag size={10} /> {commit.tag}
+                  <span className="flex items-center gap-1 rounded border border-border bg-muted/60 px-2 py-0.5 text-xs text-card-foreground">
+                    <Tag size={10} aria-hidden /> {commit.tag}
                   </span>
                 )}
               </div>
-              
-              <h3 className="text-xl text-white font-bold mb-2 group-hover:text-cyan-400 transition-colors">
+
+              <h3 className="mb-2 text-xl font-bold text-foreground transition-colors group-hover:text-primary">
                 {commit.msg}
               </h3>
-              
-              <p className="text-gray-400 text-sm leading-relaxed bg-black/30 p-4 rounded border border-white/5 group-hover:border-white/20 transition-colors">
+
+              <p className="rounded border border-border bg-card/50 p-4 text-sm leading-relaxed text-muted-foreground transition-colors group-hover:border-primary/25 group-hover:bg-card/70">
                 {commit.details}
               </p>
             </div>
-          </motion.div>
+          </m.div>
         ))}
-        
+
         <div className="relative pl-8 pt-4">
-           <div className="absolute -left-[5px] top-0 w-2 h-2 rounded-full bg-gray-700" />
-           <span className="text-gray-600 text-sm">Initial commit</span>
+          <div
+            className="absolute -left-[5px] top-0 size-2 rounded-full bg-muted-foreground/45 ring-2 ring-background"
+            aria-hidden
+          />
+          <span className="text-sm text-muted-foreground">Initial commit</span>
         </div>
       </div>
     </div>

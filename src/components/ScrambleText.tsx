@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { useReducedMotion } from 'framer-motion';
 
 interface ScrambleTextProps {
   text: string;
@@ -9,43 +10,50 @@ interface ScrambleTextProps {
 
 const CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890!@#$%^&*()_+';
 
-export const ScrambleText = ({ text, className, interval = 30, hoverTrigger = false }: ScrambleTextProps) => {
+export const ScrambleText = ({
+  text,
+  className,
+  interval = 30,
+  hoverTrigger = false,
+}: ScrambleTextProps) => {
   const [displayText, setDisplayText] = useState(text);
   const [isScrambling, setIsScrambling] = useState(false);
   const intervalRef = useRef<number | null>(null);
+  const reduceMotion = useReducedMotion();
 
   const scramble = () => {
+    if (reduceMotion) {
+      setDisplayText(text);
+      return;
+    }
     if (isScrambling) return;
     setIsScrambling(true);
 
     let iteration = 0;
-
-    // Create a static buffer of random characters for the "future" text
     const staticBuffer = text.split('').map(() => CHARS[Math.floor(Math.random() * CHARS.length)]);
 
-    clearInterval(intervalRef.current as number);
+    if (intervalRef.current != null) clearInterval(intervalRef.current);
 
     intervalRef.current = window.setInterval(() => {
       setDisplayText(() =>
-        text.split('')
+        text
+          .split('')
           .map((_char, index) => {
             if (index < Math.floor(iteration)) {
               return text[index];
             }
-            // Only scramble the character currently being revealed
             if (index === Math.floor(iteration)) {
               return CHARS[Math.floor(Math.random() * CHARS.length)];
             }
-            // Return the static random character for future letters
             return staticBuffer[index];
           })
           .join('')
       );
 
       if (iteration >= text.length) {
-        clearInterval(intervalRef.current as number);
+        if (intervalRef.current != null) clearInterval(intervalRef.current);
         setIsScrambling(false);
-        setDisplayText(text); // Ensure final text is correct
+        setDisplayText(text);
       }
 
       iteration += 0.5;
@@ -53,15 +61,22 @@ export const ScrambleText = ({ text, className, interval = 30, hoverTrigger = fa
   };
 
   useEffect(() => {
+    if (reduceMotion) {
+      setDisplayText(text);
+      return;
+    }
     scramble();
-    return () => clearInterval(intervalRef.current as number);
-  }, [text, interval]);
+    return () => {
+      if (intervalRef.current != null) clearInterval(intervalRef.current);
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps -- scramble only tracks text/interval above
+  }, [text, interval, reduceMotion]);
 
   return (
     <span
-      className={`inline-block font-mono cursor-default ${className}`}
+      className={`inline-block font-mono cursor-default ${className ?? ''}`}
       onMouseEnter={() => {
-        if (hoverTrigger) {
+        if (hoverTrigger && !reduceMotion) {
           scramble();
         }
       }}

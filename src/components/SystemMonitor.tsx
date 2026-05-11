@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { m } from 'framer-motion';
 import { Terminal, Cpu, Activity, GitBranch, Clock, Wifi } from 'lucide-react';
 
 interface Process {
@@ -81,7 +81,7 @@ export const SystemMonitor = () => {
         <div className="w-full md:w-1/2 border-b md:border-b-0 md:border-r border-gray-700 flex flex-col p-2 bg-[#1a1b26]/90">
             {/* Header */}
             <div className="flex justify-between text-gray-500 mb-2 px-1">
-                <span className="font-bold text-cyan-400">btop++ 1.2.13</span>
+                <span className="font-bold text-primary">btop++ 1.2.13</span>
                 <span>[root@portfolio]</span>
             </div>
 
@@ -89,13 +89,13 @@ export const SystemMonitor = () => {
             <div className="bg-[#16161e]/80 rounded p-2 mb-2 border border-gray-800">
                 <div className="flex justify-between items-center mb-1">
                     <span className="text-gray-400">cpu</span>
-                    <span className="text-green-400 font-bold">12%</span>
+                    <span className="font-bold text-primary">12%</span>
                 </div>
                 <div className="h-12 flex items-end gap-0.5 mb-2">
                     {[...Array(40)].map((_, i) => (
-                        <motion.div 
+                        <m.div 
                             key={i} 
-                            className="flex-1 bg-gradient-to-t from-blue-600 to-cyan-400 rounded-sm opacity-60"
+                            className="flex-1 rounded-sm bg-gradient-to-t from-[#5c1010] to-primary opacity-70"
                             animate={{ height: `${Math.random() * 80 + 10}%` }}
                             transition={{ repeat: Infinity, repeatType: "reverse", duration: Math.random() * 2 + 1 }}
                         />
@@ -107,7 +107,7 @@ export const SystemMonitor = () => {
                     <span className="text-purple-400 font-bold">14.2G / 32G</span>
                 </div>
                 <div className="h-2 bg-gray-800 rounded overflow-hidden">
-                    <motion.div 
+                    <m.div 
                         className="h-full bg-purple-500" 
                         initial={{ width: "40%" }}
                         animate={{ width: ["40%", "45%", "42%"] }}
@@ -118,7 +118,7 @@ export const SystemMonitor = () => {
 
             {/* Process List */}
             <div className="flex-1 bg-[#16161e]/80 rounded border border-gray-800 overflow-hidden flex flex-col">
-                <div className="bg-[#24283b] px-2 py-1 text-[10px] grid grid-cols-12 gap-1 font-bold text-cyan-400">
+                <div className="grid grid-cols-12 gap-1 bg-[#24283b] px-2 py-1 text-[10px] font-bold text-primary">
                     <div className="col-span-2">PID</div>
                     <div className="col-span-3">CPU%</div>
                     <div className="col-span-2">MEM</div>
@@ -127,7 +127,7 @@ export const SystemMonitor = () => {
                 <div className="p-1 overflow-y-auto custom-scrollbar">
                     {processes.map((p) => (
                         <div key={p.pid} className="grid grid-cols-12 gap-1 px-1 py-0.5 text-[10px] text-gray-300 hover:bg-gray-700/50 cursor-pointer">
-                            <div className="col-span-2 text-green-500">{p.pid}</div>
+                            <div className="col-span-2 text-primary">{p.pid}</div>
                             <div className="col-span-3">{p.cpu}%</div>
                             <div className="col-span-2">{p.mem}</div>
                             <div className="col-span-5 truncate" style={{ color: p.color }}>{p.command}</div>
@@ -171,10 +171,10 @@ export const SystemMonitor = () => {
                     </div>
                 ))}
                 <div className="mt-2">
-                    <span className="text-blue-400">~</span>
+                    <span className="text-primary">~</span>
                 </div>
                 <div className="mt-0">
-                    <span className="text-blue-400">~</span>
+                    <span className="text-primary">~</span>
                 </div>
             </div>
 
@@ -198,7 +198,7 @@ export const SystemMonitor = () => {
 
       {/* TMUX Status Bar (Bottom) */}
       <div className="bg-[#15161e] text-[#a9b1d6] text-xs flex items-center h-6">
-        <div className="bg-green-500 text-black px-3 py-1 font-bold flex items-center gap-1 h-full">
+        <div className="flex h-full items-center gap-1 bg-primary px-3 py-1 font-bold text-primary-foreground">
             <Terminal size={12} />
             <span>0:btop</span>
         </div>
