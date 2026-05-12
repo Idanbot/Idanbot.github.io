@@ -134,7 +134,6 @@ function App() {
             }
             className="absolute bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 lg:bottom-10 lg:pb-0"
           >
-              <span className="text-[10px] uppercase tracking-widest text-muted-foreground sm:text-xs">Scroll</span>
             <m.div
               animate={prefersReducedMotion ? false : { y: [0, 10, 0] }}
               transition={{ repeat: Infinity, duration: 1.5 }}
