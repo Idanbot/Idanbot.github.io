@@ -33,7 +33,7 @@ function getRelativeTime(timestampStr: string): string {
     
     const diffDays = Math.floor(diffHours / 24);
     return `${diffDays}d ago`;
-  } catch (e) {
+  } catch {
     return 'unknown';
   }
 }
@@ -51,7 +51,7 @@ function getDeviceStatus(device: Device): DeviceStatusType {
       return 'stale';
     }
     return 'online';
-  } catch (e) {
+  } catch {
     return 'offline';
   }
 }
@@ -90,9 +90,10 @@ export const DeviceStatus = () => {
       });
 
       setDevices(sortedData);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      setError(err.message || 'An error occurred while connecting to the heartbeat monitor.');
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred while connecting to the heartbeat monitor.';
+      setError(errorMessage);
     } finally {
       setLoading(false);
       setIsRefreshing(false);
