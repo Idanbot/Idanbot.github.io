@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X, Terminal as TerminalIcon } from 'lucide-react';
+
+interface PerformanceWithMemory extends Performance {
+  memory?: {
+    usedJSHeapSize: number;
+    jsHeapLimit: number;
+    totalJSHeapSize: number;
+  };
+}
 import { SystemMonitor } from './SystemMonitor';
 import { OPEN_TERMINAL_EVENT } from '@/lib/site-events';
 
@@ -91,10 +99,53 @@ export const TerminalModal = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showMonitor]);
 
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
   useEffect(() => {
-    if (isOpen && inputRef.current && !showMonitor) {
-      inputRef.current.focus();
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      if (inputRef.current && !showMonitor) {
+        inputRef.current.focus();
+      }
+    } else {
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+        previousFocusRef.current = null;
+      }
     }
+  }, [isOpen, showMonitor]);
+
+  useEffect(() => {
+    if (!isOpen || showMonitor) return;
+
+    const handleFocusTrap = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (!modalRef.current) return;
+
+      const focusableEls = modalRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea, input, select'
+      );
+      if (focusableEls.length === 0) return;
+
+      const firstEl = focusableEls[0];
+      const lastEl = focusableEls[focusableEls.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl) {
+          lastEl.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          firstEl.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleFocusTrap);
+    return () => window.removeEventListener('keydown', handleFocusTrap);
   }, [isOpen, showMonitor]);
 
   useEffect(() => {
@@ -224,22 +275,48 @@ export const TerminalModal = () => {
           response = 'Linux';
         }
         break;
-      case 'neofetch':
+      case 'neofetch': {
+        let clientOS = 'Linux x86_64';
+        let clientShell = 'zsh 5.8';
+        if (typeof window !== 'undefined') {
+          const ua = window.navigator.userAgent;
+          if (ua.includes('Macintosh')) {
+            clientOS = 'macOS (Darwin)';
+            clientShell = 'zsh (iterm)';
+          } else if (ua.includes('Windows')) {
+            clientOS = 'Windows (WSL)';
+            clientShell = 'powershell';
+          } else if (ua.includes('Android')) {
+            clientOS = 'Android (Linux)';
+            clientShell = 'sh (termux)';
+          } else if (ua.includes('iPhone') || ua.includes('iPad')) {
+            clientOS = 'iOS (Darwin)';
+            clientShell = 'bash';
+          }
+        }
+        const cores = typeof navigator !== 'undefined' ? (navigator.hardwareConcurrency || 4) : 4;
+        let memStr = '512MB / 4096MB (JS Heap)';
+        const memory = typeof window !== 'undefined' ? (window.performance as PerformanceWithMemory).memory : undefined;
+        if (memory) {
+          memStr = `${Math.round(memory.usedJSHeapSize / (1024 * 1024))}MB / ${Math.round(memory.jsHeapLimit / (1024 * 1024))}MB (JS Heap)`;
+        }
+
         response = `
        .---.
-      /     \\      OS: IdanOS Linux x86_64
-      |  O  |      Host: Portfolio v2.0
-      \\  _  /      Kernel: 5.15.0-custom
+      /     \\      OS: ${clientOS}
+      |  O  |      Host: Browser Session
+      \\  _  /      Kernel: 5.15.0-browser
        '.___.'     Uptime: ${Math.floor(performance.now() / 60000)} mins
-                   Packages: 1337 (dpkg)
-                   Shell: zsh 5.8
-                   Theme: Neo-Cyber [GTK3]
-                   Icons: Papirus [GTK3]
+                   Packages: 42 (npm-deps)
+                   Shell: ${clientShell}
+                   Theme: Cyber-Tokyo [GTK3]
+                   Icons: Tokyo-Night [GTK3]
                    Terminal: IdanTerm
-                   CPU: Neural Engine v9
-                   Memory: 64GB / 128GB
+                   CPU: ${cores}x Logical Cores
+                   Memory: ${memStr}
         `;
         break;
+      }
       case 'curl':
         if (!args[0]) {
           response = 'curl: try \'curl --help\' or \'curl --manual\' for more information';
@@ -399,6 +476,7 @@ export const TerminalModal = () => {
 
         {isOpen && !showMonitor && (
           <m.div
+            ref={modalRef}
             role="dialog"
             aria-modal="true"
             aria-label="Terminal"

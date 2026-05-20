@@ -3,7 +3,6 @@ import { m, Variants } from 'framer-motion';
 import { FaGithub, FaLinkedin, FaEnvelope } from 'react-icons/fa';
 import { Terminal } from 'lucide-react';
 import { MobileNav } from './components/MobileNav';
-import { StackSection } from './components/StackSection';
 import { TerminalModal } from './components/TerminalModal';
 import { CommandPalette } from './components/CommandPalette';
 import { ParticleNetwork } from './components/ParticleNetwork';
@@ -14,6 +13,9 @@ import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion';
 import { useActiveSection } from './hooks/useActiveSection';
 import { OPEN_TERMINAL_EVENT } from './lib/site-events';
 
+const StackSection = React.lazy(() =>
+  import('./components/StackSection').then((mod) => ({ default: mod.StackSection }))
+);
 const GitHistory = React.lazy(() =>
   import('./components/GitHistory').then((mod) => ({ default: mod.GitHistory }))
 );
@@ -24,6 +26,7 @@ const StatusPage = React.lazy(() =>
 function App() {
   const activeSection = useActiveSection();
   const prefersReducedMotion = usePrefersReducedMotion();
+  const isServer = typeof window === 'undefined';
 
   const container: Variants = prefersReducedMotion
     ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
@@ -142,7 +145,17 @@ function App() {
           </m.div>
         </section>
 
-        <StackSection className="snap-start" />
+        {isServer ? (
+          <div className="min-h-[300px] max-w-5xl mx-auto rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
+        ) : (
+          <Suspense
+            fallback={
+              <div className="min-h-[300px] max-w-5xl mx-auto rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
+            }
+          >
+            <StackSection className="snap-start" />
+          </Suspense>
+        )}
 
         <section id="history" className="py-24 sm:py-32 px-4 sm:px-6 max-w-7xl mx-auto snap-start">
           <m.div
@@ -159,23 +172,31 @@ function App() {
               Changelog of my professional journey.
             </p>
           </m.div>
-          <Suspense
-            fallback={
-              <div className="min-h-[280px] max-w-4xl mx-auto rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
-            }
-          >
-            <GitHistory />
-          </Suspense>
+          {isServer ? (
+            <div className="min-h-[280px] max-w-4xl mx-auto rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
+          ) : (
+            <Suspense
+              fallback={
+                <div className="min-h-[280px] max-w-4xl mx-auto rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
+              }
+            >
+              <GitHistory />
+            </Suspense>
+          )}
         </section>
 
         <section id="monitor" className="snap-start">
-          <Suspense
-            fallback={
-              <div className="min-h-[180px] max-w-5xl mx-auto px-4 sm:px-6 rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
-            }
-          >
-            <StatusPage />
-          </Suspense>
+          {isServer ? (
+            <div className="min-h-[180px] max-w-5xl mx-auto px-4 sm:px-6 rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
+          ) : (
+            <Suspense
+              fallback={
+                <div className="min-h-[180px] max-w-5xl mx-auto px-4 sm:px-6 rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
+              }
+            >
+              <StatusPage />
+            </Suspense>
+          )}
         </section>
       </main>
 

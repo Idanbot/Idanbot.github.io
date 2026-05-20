@@ -56,9 +56,42 @@ function getDeviceStatus(device: Device): DeviceStatusType {
   }
 }
 
+async function fetchWithRetry(url: string, options?: RequestInit, retries = 3, delay = 1000): Promise<Response> {
+  try {
+    const response = await fetch(url, options);
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return response;
+  } catch (error) {
+    if (retries <= 0) throw error;
+    await new Promise((resolve) => setTimeout(resolve, delay));
+    return fetchWithRetry(url, options, retries - 1, delay * 2);
+  }
+}
+
 export const DeviceStatus = () => {
-  const [devices, setDevices] = useState<Device[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [devices, setDevices] = useState<Device[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('device-heartbeats');
+        return cached ? JSON.parse(cached) : [];
+      } catch {
+        return [];
+      }
+    }
+    return [];
+  });
+  const [loading, setLoading] = useState<boolean>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        return !localStorage.getItem('device-heartbeats');
+      } catch {
+        return true;
+      }
+    }
+    return true;
+  });
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
@@ -71,10 +104,7 @@ export const DeviceStatus = () => {
     setError(null);
 
     try {
-      const response = await fetch('https://device-heartbeat-monitor.botbolidan.workers.dev/');
-      if (!response.ok) {
-        throw new Error(`Failed to fetch device status: ${response.statusText}`);
-      }
+      const response = await fetchWithRetry('https://device-heartbeat-monitor.botbolidan.workers.dev/');
       const data: Device[] = await response.json();
       
       // Sort devices: online first, then stale, then offline; then alphabetically by name
@@ -90,6 +120,11 @@ export const DeviceStatus = () => {
       });
 
       setDevices(sortedData);
+      try {
+        localStorage.setItem('device-heartbeats', JSON.stringify(sortedData));
+      } catch (e) {
+        console.warn('Failed to cache device heartbeats to localStorage:', e);
+      }
     } catch (err) {
       console.error(err);
       const errorMessage = err instanceof Error ? err.message : 'An error occurred while connecting to the heartbeat monitor.';
@@ -101,7 +136,8 @@ export const DeviceStatus = () => {
   }, []);
 
   useEffect(() => {
-    fetchDevices();
+    const hasCache = typeof window !== 'undefined' && !!localStorage.getItem('device-heartbeats');
+    fetchDevices(hasCache);
   }, [fetchDevices]);
 
   // Overall system health status

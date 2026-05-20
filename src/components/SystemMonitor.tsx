@@ -2,6 +2,14 @@ import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import { Terminal, Cpu, Activity, GitBranch, Clock, Wifi } from 'lucide-react';
 
+interface PerformanceWithMemory extends Performance {
+  memory?: {
+    usedJSHeapSize: number;
+    jsHeapLimit: number;
+    totalJSHeapSize: number;
+  };
+}
+
 interface Process {
   pid: number;
   user: string;
@@ -65,10 +73,46 @@ func main() {
 
 export const SystemMonitor = () => {
   const [time, setTime] = useState(new Date());
+  const [cpuLoad, setCpuLoad] = useState(12);
+  const [memUsage, setMemUsage] = useState({ used: 0.45, limit: 4.0 });
+  const [cpuCores, setCpuCores] = useState(4);
 
   useEffect(() => {
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setCpuCores(window.navigator.hardwareConcurrency || 4);
+      const memory = (window.performance as PerformanceWithMemory).memory;
+      if (memory) {
+        setMemUsage({
+          used: memory.usedJSHeapSize / (1024 * 1024 * 1024),
+          limit: memory.jsHeapLimit / (1024 * 1024 * 1024)
+        });
+      }
+    }
+
+    const interval = setInterval(() => {
+      setCpuLoad(Math.floor(Math.random() * 25) + 8); // Fluctuate standard page CPU usage
+
+      const memory = typeof window !== 'undefined' ? (window.performance as PerformanceWithMemory).memory : undefined;
+      if (memory) {
+        setMemUsage({
+          used: memory.usedJSHeapSize / (1024 * 1024 * 1024),
+          limit: memory.jsHeapLimit / (1024 * 1024 * 1024)
+        });
+      } else {
+        setMemUsage(prev => {
+          const delta = (Math.random() - 0.5) * 0.03;
+          const nextUsed = Math.max(0.35, Math.min(1.1, prev.used + delta));
+          return { used: nextUsed, limit: 4.0 };
+        });
+      }
+    }, 2000);
+
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -88,30 +132,30 @@ export const SystemMonitor = () => {
             {/* CPU / MEM Box */}
             <div className="bg-[#16161e]/80 rounded p-2 mb-2 border border-gray-800">
                 <div className="flex justify-between items-center mb-1">
-                    <span className="text-gray-400">cpu</span>
-                    <span className="font-bold text-primary">12%</span>
+                    <span className="text-gray-400">cpu ({cpuCores} cores)</span>
+                    <span className="font-bold text-primary">{cpuLoad}%</span>
                 </div>
                 <div className="h-12 flex items-end gap-0.5 mb-2">
                     {[...Array(40)].map((_, i) => (
                         <m.div 
                             key={i} 
                             className="flex-1 rounded-sm bg-gradient-to-t from-[#5c1010] to-primary opacity-70"
-                            animate={{ height: `${Math.random() * 80 + 10}%` }}
-                            transition={{ repeat: Infinity, repeatType: "reverse", duration: Math.random() * 2 + 1 }}
+                            animate={{ height: `${Math.max(5, Math.min(95, cpuLoad + (Math.sin(i + time.getSeconds()) * 8) + (Math.random() - 0.5) * 10))}%` }}
+                            transition={{ duration: 0.5 }}
                         />
                     ))}
                 </div>
                 
                 <div className="flex justify-between items-center mb-1 mt-2">
                     <span className="text-gray-400">mem</span>
-                    <span className="text-purple-400 font-bold">14.2G / 32G</span>
+                    <span className="text-purple-400 font-bold">{memUsage.used.toFixed(2)}G / {memUsage.limit.toFixed(1)}G</span>
                 </div>
                 <div className="h-2 bg-gray-800 rounded overflow-hidden">
                     <m.div 
                         className="h-full bg-purple-500" 
-                        initial={{ width: "40%" }}
-                        animate={{ width: ["40%", "45%", "42%"] }}
-                        transition={{ duration: 3, repeat: Infinity }}
+                        initial={{ width: "10%" }}
+                        animate={{ width: `${(memUsage.used / memUsage.limit) * 100}%` }}
+                        transition={{ duration: 0.5 }}
                     />
                 </div>
             </div>
@@ -213,11 +257,11 @@ export const SystemMonitor = () => {
         <div className="flex items-center h-full">
              <div className="px-3 bg-[#1a1b26] h-full flex items-center gap-2 border-l border-gray-800">
                 <Cpu size={12} className="text-orange-400" />
-                <span>32%</span>
+                <span>{cpuLoad}%</span>
              </div>
              <div className="px-3 bg-[#1a1b26] h-full flex items-center gap-2 border-l border-gray-800">
                 <Activity size={12} className="text-purple-400" />
-                <span>16GB</span>
+                <span>{Math.round(memUsage.used * 1024)}MB</span>
              </div>
              <div className="px-3 bg-[#24283b] h-full flex items-center gap-2 text-white">
                 <Wifi size={12} />

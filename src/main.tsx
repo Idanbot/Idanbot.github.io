@@ -4,10 +4,17 @@ import { LazyMotion, domAnimation } from 'framer-motion'
 import App from './App.tsx'
 import './index.css'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
+const container = document.getElementById('root')!;
+const appElement = (
   <React.StrictMode>
     <LazyMotion features={domAnimation} strict>
       <App />
     </LazyMotion>
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+);
+
+if (container.hasChildNodes()) {
+  ReactDOM.hydrateRoot(container, appElement);
+} else {
+  ReactDOM.createRoot(container).render(appElement);
+}
