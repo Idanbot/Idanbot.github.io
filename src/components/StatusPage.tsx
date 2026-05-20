@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react';
 import { Globe, Code2, Mail } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { DeviceStatus } from './DeviceStatus';
 
 export const StatusPage = () => {
   return (
@@ -32,6 +33,10 @@ export const StatusPage = () => {
             icon={Mail}
           />
         </div>
+
+        <div className="my-12 border-t border-white/5" />
+
+        <DeviceStatus />
       </div>
     </section>
   );
