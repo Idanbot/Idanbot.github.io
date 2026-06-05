@@ -14,8 +14,8 @@ import {
   Home,
 } from 'lucide-react';
 
-export const CommandPalette = () => {
-  const [open, setOpen] = useState(false);
+export const CommandPalette = ({ startOpen = false }: { startOpen?: boolean }) => {
+  const [open, setOpen] = useState(startOpen);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   const scrollToId = (id: string) => {

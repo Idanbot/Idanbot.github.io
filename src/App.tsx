@@ -1,11 +1,7 @@
-import React, { Suspense } from 'react';
+import React, { Suspense, useEffect, useRef, useState } from 'react';
 import { m, Variants } from 'framer-motion';
-import { FaGithub, FaLinkedin, FaEnvelope } from 'react-icons/fa';
 import { Terminal } from 'lucide-react';
 import { MobileNav } from './components/MobileNav';
-import { TerminalModal } from './components/TerminalModal';
-import { CommandPalette } from './components/CommandPalette';
-import { ParticleNetwork } from './components/ParticleNetwork';
 import { ScrambleText } from './components/ScrambleText';
 import { TracingBeams } from './components/TracingBeams';
 import { HeroBackground } from './components/HeroBackground';
@@ -13,6 +9,15 @@ import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion';
 import { useActiveSection } from './hooks/useActiveSection';
 import { OPEN_TERMINAL_EVENT } from './lib/site-events';
 
+const TerminalModal = React.lazy(() =>
+  import('./components/TerminalModal').then((mod) => ({ default: mod.TerminalModal }))
+);
+const CommandPalette = React.lazy(() =>
+  import('./components/CommandPalette').then((mod) => ({ default: mod.CommandPalette }))
+);
+const ParticleNetwork = React.lazy(() =>
+  import('./components/ParticleNetwork').then((mod) => ({ default: mod.ParticleNetwork }))
+);
 const StackSection = React.lazy(() =>
   import('./components/StackSection').then((mod) => ({ default: mod.StackSection }))
 );
@@ -27,6 +32,58 @@ function App() {
   const activeSection = useActiveSection();
   const prefersReducedMotion = usePrefersReducedMotion();
   const isServer = typeof window === 'undefined';
+  const [terminalRequested, setTerminalRequested] = useState(false);
+  const [commandPaletteRequested, setCommandPaletteRequested] = useState(false);
+  const [particlesReady, setParticlesReady] = useState(false);
+  const requestTerminal = () => {
+    if (terminalRequested) {
+      window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT));
+      return;
+    }
+    setTerminalRequested(true);
+  };
+
+  useEffect(() => {
+    const openTerminal = () => setTerminalRequested(true);
+    const handleGlobalShortcuts = (event: KeyboardEvent) => {
+      if ((event.key === '`' || event.key === '~') && !terminalRequested) {
+        event.preventDefault();
+        setTerminalRequested(true);
+        return;
+      }
+      if (event.key === 'k' && (event.metaKey || event.ctrlKey) && !commandPaletteRequested) {
+        event.preventDefault();
+        setCommandPaletteRequested(true);
+      }
+    };
+
+    window.addEventListener(OPEN_TERMINAL_EVENT, openTerminal);
+    window.addEventListener('keydown', handleGlobalShortcuts);
+    return () => {
+      window.removeEventListener(OPEN_TERMINAL_EVENT, openTerminal);
+      window.removeEventListener('keydown', handleGlobalShortcuts);
+    };
+  }, [commandPaletteRequested, terminalRequested]);
+
+  useEffect(() => {
+    if (prefersReducedMotion) return;
+
+    const start = () => setParticlesReady(true);
+    const idleId =
+      'requestIdleCallback' in window
+        ? window.requestIdleCallback(start, { timeout: 1400 })
+        : undefined;
+    const timeoutId = idleId === undefined ? window.setTimeout(start, 900) : undefined;
+
+    return () => {
+      if (idleId !== undefined && 'cancelIdleCallback' in window) {
+        window.cancelIdleCallback(idleId);
+      }
+      if (timeoutId !== undefined) {
+        window.clearTimeout(timeoutId);
+      }
+    };
+  }, [prefersReducedMotion]);
 
   const container: Variants = prefersReducedMotion
     ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
@@ -54,8 +111,16 @@ function App() {
         Skip to main content
       </a>
       <MobileNav activeSection={activeSection} />
-      <TerminalModal />
-      <CommandPalette />
+      {terminalRequested ? (
+        <Suspense fallback={null}>
+          <TerminalModal startOpen />
+        </Suspense>
+      ) : null}
+      {commandPaletteRequested ? (
+        <Suspense fallback={null}>
+          <CommandPalette startOpen />
+        </Suspense>
+      ) : null}
 
       <TracingBeams />
 
@@ -70,7 +135,11 @@ function App() {
         >
           <HeroBackground />
           <div className="pointer-events-none absolute inset-0 z-[1]">
-            <ParticleNetwork />
+            {particlesReady ? (
+              <Suspense fallback={null}>
+                <ParticleNetwork />
+              </Suspense>
+            ) : null}
           </div>
           <m.div
             variants={container}
@@ -94,28 +163,28 @@ function App() {
               variants={item}
               className="mx-auto max-w-2xl text-lg font-light leading-relaxed text-muted-foreground sm:text-xl md:text-2xl"
             >
-              <span className="font-medium text-foreground">DevOps Engineer</span> &
-              <span className="font-medium text-foreground"> Backend Developer</span> crafting robust
-              infrastructure and scalable systems.
+              <span className="font-medium text-foreground">Cloud Architect / DevOps Engineer</span> with
+              <span className="font-medium text-foreground"> backend depth</span>, building secure,
+              cost-aware cloud platforms and reliable production systems.
             </m.p>
 
             <m.div
               variants={item}
               className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 pt-6 sm:pt-8"
             >
-              <SocialLink href="https://github.com/Idanbot" icon={<FaGithub size={24} />} label="GitHub" />
+              <SocialLink href="https://github.com/Idanbot" icon={<GithubIcon className="size-6" />} label="GitHub" />
               <SocialLink
                 href="https://www.linkedin.com/in/idanbotbol/"
-                icon={<FaLinkedin size={24} />}
+                icon={<LinkedinIcon className="size-6" />}
                 label="LinkedIn"
               />
-              <SocialLink href="mailto:idan@idanbot.uk" icon={<FaEnvelope size={24} />} label="Email" />
+              <SocialLink href="mailto:idan@idanbot.uk" icon={<MailIcon className="size-6" />} label="Email" />
             </m.div>
 
             <m.div variants={item} className="flex justify-center pt-2">
               <button
                 type="button"
-                onClick={() => window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT))}
+                onClick={requestTerminal}
                 className="inline-flex min-h-11 max-w-[calc(100vw-2rem)] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2.5 text-left text-sm text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-primary/40 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
                 <Terminal className="size-4 shrink-0 text-primary" aria-hidden />
@@ -145,17 +214,26 @@ function App() {
           </m.div>
         </section>
 
-        {isServer ? (
-          <div className="min-h-[300px] max-w-5xl mx-auto rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
-        ) : (
+        <LazyOnVisible
+          id="skills"
+          rootMargin="300px 0px"
+          fallback={
+            <section
+              className="mx-auto min-h-[300px] max-w-5xl snap-start rounded-xl border border-white/5 bg-white/[0.02] animate-pulse"
+            />
+          }
+          isServer={isServer}
+        >
           <Suspense
             fallback={
-              <div className="min-h-[300px] max-w-5xl mx-auto rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
+              <section
+                className="mx-auto min-h-[300px] max-w-5xl snap-start rounded-xl border border-white/5 bg-white/[0.02] animate-pulse"
+              />
             }
           >
             <StackSection className="snap-start" />
           </Suspense>
-        )}
+        </LazyOnVisible>
 
         <section id="history" className="py-24 sm:py-32 px-4 sm:px-6 max-w-7xl mx-auto snap-start">
           <m.div
@@ -172,9 +250,13 @@ function App() {
               Changelog of my professional journey.
             </p>
           </m.div>
-          {isServer ? (
-            <div className="min-h-[280px] max-w-4xl mx-auto rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
-          ) : (
+          <LazyOnVisible
+            rootMargin="450px 0px"
+            fallback={
+              <div className="min-h-[280px] max-w-4xl mx-auto rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
+            }
+            isServer={isServer}
+          >
             <Suspense
               fallback={
                 <div className="min-h-[280px] max-w-4xl mx-auto rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
@@ -182,13 +264,17 @@ function App() {
             >
               <GitHistory />
             </Suspense>
-          )}
+          </LazyOnVisible>
         </section>
 
         <section id="monitor" className="snap-start">
-          {isServer ? (
-            <div className="min-h-[180px] max-w-5xl mx-auto px-4 sm:px-6 rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
-          ) : (
+          <LazyOnVisible
+            rootMargin="450px 0px"
+            fallback={
+              <div className="min-h-[180px] max-w-5xl mx-auto px-4 sm:px-6 rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
+            }
+            isServer={isServer}
+          >
             <Suspense
               fallback={
                 <div className="min-h-[180px] max-w-5xl mx-auto px-4 sm:px-6 rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
@@ -196,7 +282,7 @@ function App() {
             >
               <StatusPage />
             </Suspense>
-          )}
+          </LazyOnVisible>
         </section>
       </main>
 
@@ -235,6 +321,79 @@ function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode
         {icon}
       </div>
     </m.a>
+  );
+}
+
+function LazyOnVisible({
+  children,
+  fallback,
+  id,
+  isServer,
+  rootMargin = '600px 0px',
+}: {
+  children: React.ReactNode;
+  fallback: React.ReactNode;
+  id?: string;
+  isServer: boolean;
+  rootMargin?: string;
+}) {
+  const [shouldRender, setShouldRender] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (shouldRender) return;
+    const node = ref.current;
+    if (!node || !('IntersectionObserver' in window)) {
+      setShouldRender(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setShouldRender(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [rootMargin, shouldRender]);
+
+  if (isServer || !shouldRender) {
+    return (
+      <div ref={ref} id={id}>
+        {fallback}
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
+function GithubIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
+      <path d="M12 0C5.37 0 0 5.5 0 12.29c0 5.43 3.44 10.03 8.2 11.65.6.11.82-.27.82-.59 0-.29-.01-1.06-.02-2.08-3.34.74-4.04-1.65-4.04-1.65-.55-1.42-1.33-1.8-1.33-1.8-1.09-.76.08-.74.08-.74 1.2.09 1.84 1.27 1.84 1.27 1.07 1.87 2.81 1.33 3.5 1.02.11-.79.42-1.33.76-1.64-2.66-.31-5.46-1.36-5.46-6.07 0-1.34.47-2.44 1.24-3.3-.12-.31-.54-1.56.12-3.25 0 0 1.01-.33 3.3 1.26A11.21 11.21 0 0 1 12 5.97c1.02.01 2.04.14 3 .41 2.29-1.59 3.3-1.26 3.3-1.26.66 1.69.24 2.94.12 3.25.77.86 1.24 1.96 1.24 3.3 0 4.72-2.8 5.75-5.47 6.06.43.38.81 1.13.81 2.28 0 1.65-.02 2.97-.02 3.37 0 .33.22.71.83.59A12.29 12.29 0 0 0 24 12.29C24 5.5 18.63 0 12 0Z" />
+    </svg>
+  );
+}
+
+function LinkedinIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
+      <path d="M20.45 20.45h-3.56v-5.58c0-1.33-.02-3.04-1.85-3.04-1.86 0-2.14 1.45-2.14 2.95v5.67H9.34V9h3.42v1.56h.05c.48-.9 1.64-1.85 3.37-1.85 3.61 0 4.28 2.38 4.28 5.47v6.27ZM5.32 7.43a2.06 2.06 0 1 1 0-4.13 2.06 2.06 0 0 1 0 4.13Zm1.78 13.02H3.54V9H7.1v11.45ZM22.23 0H1.77C.79 0 0 .77 0 1.72v20.56C0 23.23.8 24 1.77 24h20.46c.98 0 1.77-.77 1.77-1.72V1.72C24 .77 23.2 0 22.23 0Z" />
+    </svg>
+  );
+}
+
+function MailIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden {...props}>
+      <path d="M1.5 4.5A2.5 2.5 0 0 1 4 2h16a2.5 2.5 0 0 1 2.5 2.5v15A2.5 2.5 0 0 1 20 22H4a2.5 2.5 0 0 1-2.5-2.5v-15Zm2.3-.1a.75.75 0 0 0-.8.75v.36l9 6.1 9-6.1v-.36a.75.75 0 0 0-.8-.75H3.8Zm17.2 3.3-8.58 5.82a.75.75 0 0 1-.84 0L3 7.7v11.05c0 .41.34.75.75.75h16.5c.41 0 .75-.34.75-.75V7.7Z" />
+    </svg>
   );
 }
 

@@ -67,11 +67,12 @@ const CREDLY_PCA =
 
 export const StackSection = ({ className }: { className?: string }) => {
   const prefersReducedMotion = usePrefersReducedMotion();
+  const marqueeStacks = prefersReducedMotion ? stacks : [...stacks, ...stacks];
 
   return (
     <section
       id="skills"
-      className={`mx-auto max-w-5xl border-t border-white/5 px-4 py-20 sm:px-6 md:py-32 snap-start ${className ?? ''}`}
+      className={`mx-auto max-w-6xl border-t border-white/5 px-4 py-14 sm:px-6 md:py-20 snap-start ${className ?? ''}`}
       aria-labelledby="skills-heading"
     >
       <m.div
@@ -79,42 +80,56 @@ export const StackSection = ({ className }: { className?: string }) => {
         whileInView={{ opacity: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : undefined}
         viewport={{ once: true, margin: '-80px' }}
-        className="mb-12 text-center md:mb-14"
+        className="mb-8 text-center md:mb-10"
       >
-        <div className="mb-4 inline-flex items-center justify-center gap-2 text-primary/90">
+        <div className="mb-3 inline-flex items-center justify-center gap-2 text-primary/90">
           <Layers
-            className="size-9 motion-safe:animate-pulse motion-reduce:animate-none"
+            className="size-7 motion-safe:animate-pulse motion-reduce:animate-none"
             aria-hidden
           />
         </div>
-        <h2 id="skills-heading" className="mb-4 text-3xl font-bold md:text-4xl">
+        <h2 id="skills-heading" className="mb-3 text-3xl font-bold md:text-4xl">
           Core <span className="text-gradient">Stack</span>
         </h2>
-        <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg">
+        <p className="mx-auto max-w-2xl text-sm leading-relaxed text-muted-foreground md:text-base">
           Tools and platforms I use to ship reliable systems—from clusters to observability.
         </p>
       </m.div>
 
-      <div className="relative sm:static">
+      <div
+        className={
+          prefersReducedMotion
+            ? "relative overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+            : "relative overflow-hidden"
+        }
+      >
         <div
-          className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-7 bg-gradient-to-r from-[var(--background)] to-transparent sm:hidden"
+          className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-12 bg-gradient-to-r from-[var(--background)] to-transparent"
           aria-hidden
         />
         <div
-          className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-7 bg-gradient-to-l from-[var(--background)] to-transparent sm:hidden"
+          className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-12 bg-gradient-to-l from-[var(--background)] to-transparent"
           aria-hidden
         />
-        <p className="mb-2 text-center text-[11px] text-muted-foreground sm:hidden" aria-hidden>
-          Swipe horizontally to see all tools
-        </p>
-        {/* Horizontal scroll forces overflow-y to clip; avoid hover transforms/shadows that extend past the row on small screens. */}
-        <div className="max-sm:overflow-x-auto max-sm:py-2 [-ms-overflow-style:none] [scrollbar-width:none] max-sm:snap-x max-sm:snap-mandatory sm:contents [&::-webkit-scrollbar]:hidden">
-          <ul className="m-0 flex list-none flex-nowrap justify-start gap-2 px-1 py-3 sm:flex-wrap sm:justify-center sm:gap-3 sm:overflow-visible sm:px-0 sm:py-0 md:gap-4">
-        {stacks.map((item, index) => {
+        <m.ul
+          className="m-0 flex h-[122px] list-none flex-nowrap items-stretch gap-3 px-1 py-2 will-change-transform md:h-[132px] md:gap-4"
+          animate={prefersReducedMotion ? undefined : { x: ['0%', '-50%'] }}
+          transition={
+            prefersReducedMotion
+              ? undefined
+              : {
+                  duration: 42,
+                  ease: 'linear',
+                  repeat: Infinity,
+                }
+          }
+        >
+        {marqueeStacks.map((item, index) => {
           const Icon = item.Icon;
           return (
             <m.li
-              key={item.name}
+              key={`${item.name}-${index}`}
+              aria-hidden={!prefersReducedMotion && index >= stacks.length}
               initial={prefersReducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.92 }}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, margin: '-40px' }}
@@ -122,19 +137,19 @@ export const StackSection = ({ className }: { className?: string }) => {
                 prefersReducedMotion
                   ? { duration: 0 }
                   : {
-                      delay: Math.min(index * 0.03, 0.36),
+                      delay: Math.min((index % stacks.length) * 0.03, 0.36),
                       type: 'spring',
                       stiffness: 380,
                       damping: 26,
                     }
               }
-              className="list-none shrink-0 snap-start"
+              className="list-none shrink-0"
             >
-              <Card className="stack-card-lid group h-full min-w-[116px] max-w-[138px] border border-white/10 bg-card/60 backdrop-blur-sm transition-[border-color,box-shadow,background-color,filter] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-primary/55 hover:bg-card/[0.93] hover:shadow-[0_10px_32px_-14px_color-mix(in_oklab,var(--primary),transparent)] max-sm:hover:border-primary/45 max-sm:hover:shadow-none max-sm:hover:brightness-[1.04] motion-reduce:transition-none sm:min-w-[148px] sm:max-w-[180px]">
-                <CardContent className="flex flex-col items-center gap-1.5 p-3 text-center sm:gap-2 sm:p-4">
-                  <span className="flex size-11 origin-center items-center justify-center rounded-xl bg-white/[0.06] ring-1 ring-white/10 transition-[background-color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] group-hover:bg-primary/[0.12] group-hover:ring-primary/35 motion-reduce:group-hover:scale-100">
+              <Card className="stack-card-lid group h-full w-[128px] border border-white/10 bg-card/60 backdrop-blur-sm transition-[border-color,box-shadow,background-color,filter] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-primary/55 hover:bg-card/[0.93] hover:shadow-[0_10px_32px_-14px_color-mix(in_oklab,var(--primary),transparent)] max-sm:hover:border-primary/45 max-sm:hover:shadow-none max-sm:hover:brightness-[1.04] motion-reduce:transition-none md:w-[148px]">
+                <CardContent className="flex h-full flex-col items-center justify-center gap-1.5 p-3 text-center md:gap-2">
+                  <span className="flex size-10 origin-center items-center justify-center rounded-xl bg-white/[0.06] ring-1 ring-white/10 transition-[background-color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] group-hover:bg-primary/[0.12] group-hover:ring-primary/35 motion-reduce:group-hover:scale-100">
                     <Icon
-                      className="size-6 text-muted-foreground transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:text-primary"
+                      className="size-5 text-muted-foreground transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:text-primary"
                       aria-hidden
                     />
                   </span>
@@ -152,8 +167,7 @@ export const StackSection = ({ className }: { className?: string }) => {
             </m.li>
           );
         })}
-          </ul>
-        </div>
+        </m.ul>
       </div>
 
       <m.div
@@ -161,21 +175,21 @@ export const StackSection = ({ className }: { className?: string }) => {
         whileInView={{ opacity: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : undefined}
         viewport={{ once: true, margin: '-60px' }}
-        className="mx-auto mt-12 max-w-xl md:mt-16"
+        className="mx-auto mt-6 max-w-2xl md:mt-8"
       >
         <Card className="border-white/10 bg-card/50 text-left transition-colors hover:border-primary/30 hover:bg-card/70">
-          <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:gap-5 sm:p-6">
-            <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] ring-1 ring-white/10">
-              <SiGooglecloud className="size-7 text-muted-foreground" aria-hidden />
+          <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4">
+            <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] ring-1 ring-white/10">
+              <SiGooglecloud className="size-6 text-muted-foreground" aria-hidden />
             </span>
-            <div className="min-w-0 flex-1 space-y-2">
+            <div className="min-w-0 flex-1 space-y-1.5">
               <div className="flex flex-wrap items-center gap-2">
                 <Award className="size-4 shrink-0 text-primary" aria-hidden />
-                <h3 className="text-base font-semibold text-card-foreground sm:text-lg">
+                <h3 className="text-sm font-semibold text-card-foreground sm:text-base">
                   Google Cloud Certified — Professional Cloud Architect
                 </h3>
               </div>
-              <p className="text-sm text-muted-foreground">
+              <p className="text-xs text-muted-foreground sm:text-sm">
                 Issued <time dateTime="2026-02-18">18 February 2026</time>
                 {' · '}
                 Expires <time dateTime="2028-02-18">18 February 2028</time>

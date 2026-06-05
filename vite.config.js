@@ -6,19 +6,17 @@ import path from 'path';
 export default defineConfig({
     plugins: [react()],
     base: '/',
-    resolve: {
-        alias: {
-            "@": path.resolve(__dirname, "./src"),
-        },
-    },
-    test: {
-        environment: 'jsdom',
-        include: ['src/**/*.{test,spec}.{ts,tsx}'],
-        globals: false,
-        passWithNoTests: true,
-    },
     build: {
         outDir: 'dist',
+        modulePreload: {
+            polyfill: false,
+            resolveDependencies: function (url, deps) {
+                if (!url.includes('CommandPalette')) {
+                    return deps.filter(function (dep) { return !dep.includes('cmdk'); });
+                }
+                return deps;
+            },
+        },
         rollupOptions: {
             output: {
                 manualChunks: function (id) {
@@ -37,5 +35,16 @@ export default defineConfig({
                 },
             },
         },
+    },
+    resolve: {
+        alias: {
+            "@": path.resolve(__dirname, "./src"),
+        },
+    },
+    test: {
+        environment: 'jsdom',
+        include: ['src/**/*.{test,spec}.{ts,tsx}'],
+        globals: false,
+        passWithNoTests: true,
     },
 });

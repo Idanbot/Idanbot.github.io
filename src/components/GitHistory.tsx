@@ -4,6 +4,14 @@ import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 const commits = [
   {
+    hash: 'f6c4a21',
+    msg: 'feat: Cloud Architect / DevOps Engineer @ WideOps Ltd',
+    date: 'Feb 2026 - Present',
+    tag: 'v4.0.0',
+    type: 'feat',
+    details: 'Working with customers at WideOps, a Google Cloud Premier Partner, on cloud architecture, GCP, AWS, GKE, Kubernetes, Terraform, networking, IAM, Cloud SQL, Secret Manager, Artifact Registry, CI/CD, observability, cost optimization, and secure cloud-native delivery.'
+  },
+  {
     hash: '8e7f2a1',
     msg: 'feat: DevOps Engineer Bootcamp @ Infinity Labs R&D',
     date: '2025 - 2026',

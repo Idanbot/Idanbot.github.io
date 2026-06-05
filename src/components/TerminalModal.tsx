@@ -60,8 +60,8 @@ function longestCommonPrefix(strs: string[]): string {
   return s0;
 }
 
-export const TerminalModal = () => {
-  const [isOpen, setIsOpen] = useState(false);
+export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) => {
+  const [isOpen, setIsOpen] = useState(startOpen);
   const [showMonitor, setShowMonitor] = useState(false);
   const [input, setInput] = useState('');
   const [history, setHistory] = useState<string[]>([
@@ -186,11 +186,11 @@ export const TerminalModal = () => {
         response = 'Starting session...';
         break;
       case 'about':
-        response = 'Idan Botbol: DevOps Engineer & Backend Developer specializing in robust infrastructure.';
+        response = 'Idan Botbol: Cloud Architect / DevOps Engineer at WideOps, with backend depth and hands-on GCP, AWS, Kubernetes, Terraform, CI/CD, observability, and production cloud systems.';
         break;
       case 'skills':
         response =
-          'STACK: Kubernetes, Helm, AWS, GCP, Terraform, Docker, Nginx, Argo CD, Linux, Bash, Spring Boot, Go, Python, Java, Node.js, React, TypeScript, PostgreSQL, Redis, Cassandra, RabbitMQ, Kafka, Prometheus, Grafana, Elasticsearch, Datadog';
+          'STACK: GCP, AWS, GKE, Kubernetes, Terraform, IAM, Networking, Cloud SQL, Secret Manager, Artifact Registry, CI/CD, Observability, Cost Optimization, Linux, Bash, Python, Java, Spring Boot, REST APIs, PostgreSQL, RabbitMQ, Kafka, Prometheus, Grafana, Datadog';
         break;
       case 'cat':
         if (args[0] === 'contact.md') {
