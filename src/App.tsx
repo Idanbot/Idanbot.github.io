@@ -9,24 +9,66 @@ import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion';
 import { useActiveSection } from './hooks/useActiveSection';
 import { OPEN_TERMINAL_EVENT } from './lib/site-events';
 
-const TerminalModal = React.lazy(() =>
-  import('./components/TerminalModal').then((mod) => ({ default: mod.TerminalModal }))
-);
-const CommandPalette = React.lazy(() =>
-  import('./components/CommandPalette').then((mod) => ({ default: mod.CommandPalette }))
-);
-const ParticleNetwork = React.lazy(() =>
-  import('./components/ParticleNetwork').then((mod) => ({ default: mod.ParticleNetwork }))
-);
-const StackSection = React.lazy(() =>
-  import('./components/StackSection').then((mod) => ({ default: mod.StackSection }))
-);
-const GitHistory = React.lazy(() =>
-  import('./components/GitHistory').then((mod) => ({ default: mod.GitHistory }))
-);
-const StatusPage = React.lazy(() =>
-  import('./components/StatusPage').then((mod) => ({ default: mod.StatusPage }))
-);
+type NavigatorWithHardwareHints = Navigator & {
+  connection?: { saveData?: boolean };
+  deviceMemory?: number;
+};
+
+const loadTerminalModal = () =>
+  import('./components/TerminalModal').then((mod) => ({ default: mod.TerminalModal }));
+const loadCommandPalette = () =>
+  import('./components/CommandPalette').then((mod) => ({ default: mod.CommandPalette }));
+const loadParticleNetwork = () =>
+  import('./components/ParticleNetwork').then((mod) => ({ default: mod.ParticleNetwork }));
+const loadStackSection = () =>
+  import('./components/StackSection').then((mod) => ({ default: mod.StackSection }));
+const loadGitHistory = () =>
+  import('./components/GitHistory').then((mod) => ({ default: mod.GitHistory }));
+const loadStatusPage = () =>
+  import('./components/StatusPage').then((mod) => ({ default: mod.StatusPage }));
+
+const TerminalModal = React.lazy(loadTerminalModal);
+const CommandPalette = React.lazy(loadCommandPalette);
+const ParticleNetwork = React.lazy(loadParticleNetwork);
+const StackSection = React.lazy(loadStackSection);
+const GitHistory = React.lazy(loadGitHistory);
+const StatusPage = React.lazy(loadStatusPage);
+
+const isConstrainedDevice = () => {
+  if (typeof navigator === 'undefined') return false;
+  const nav = navigator as NavigatorWithHardwareHints;
+  return Boolean(
+    nav.connection?.saveData ||
+      (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 4) ||
+      (typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 4)
+  );
+};
+
+const prefetchWhenIdle = (loader: () => Promise<unknown>) => {
+  if (typeof window === 'undefined') return;
+  const start = () => {
+    void loader();
+  };
+  if ('requestIdleCallback' in window) {
+    window.requestIdleCallback(start, { timeout: 2200 });
+    return;
+  }
+  globalThis.setTimeout(start, 1400);
+};
+
+const prefetchOnFirstIntent = (event: PointerEvent | FocusEvent, loader: () => Promise<unknown>) => {
+  const target = event.currentTarget;
+  if (!(target instanceof HTMLElement)) return;
+  if (target.dataset.prefetched === 'true') return;
+  target.dataset.prefetched = 'true';
+  void loader();
+};
+
+const preloadTerminal = (event: React.PointerEvent<HTMLElement> | React.FocusEvent<HTMLElement>) =>
+  prefetchOnFirstIntent(event.nativeEvent, loadTerminalModal);
+const preloadStack = () => loadStackSection();
+const preloadHistory = () => loadGitHistory();
+const preloadStatus = () => loadStatusPage();
 
 function App() {
   const activeSection = useActiveSection();
@@ -35,6 +77,7 @@ function App() {
   const [terminalRequested, setTerminalRequested] = useState(false);
   const [commandPaletteRequested, setCommandPaletteRequested] = useState(false);
   const [particlesReady, setParticlesReady] = useState(false);
+  const [constrainedDevice, setConstrainedDevice] = useState(false);
   const requestTerminal = () => {
     if (terminalRequested) {
       window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT));
@@ -66,7 +109,15 @@ function App() {
   }, [commandPaletteRequested, terminalRequested]);
 
   useEffect(() => {
-    if (prefersReducedMotion) return;
+    const constrained = isConstrainedDevice();
+    setConstrainedDevice(constrained);
+    if (!constrained) {
+      prefetchWhenIdle(loadStackSection);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (prefersReducedMotion || constrainedDevice) return;
 
     const start = () => setParticlesReady(true);
     const idleId =
@@ -83,7 +134,7 @@ function App() {
         window.clearTimeout(timeoutId);
       }
     };
-  }, [prefersReducedMotion]);
+  }, [constrainedDevice, prefersReducedMotion]);
 
   const container: Variants = prefersReducedMotion
     ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
@@ -110,6 +161,8 @@ function App() {
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
+      <div className="noise-overlay" aria-hidden />
+      <DesktopNav activeSection={activeSection} />
       <MobileNav activeSection={activeSection} />
       {terminalRequested ? (
         <Suspense fallback={null}>
@@ -131,13 +184,13 @@ function App() {
       >
         <section
           id="hero"
-          className="relative flex min-h-[100dvh] min-h-screen snap-start flex-col items-center justify-center px-6 py-20"
+          className="relative flex min-h-[100dvh] min-h-screen snap-start flex-col items-start justify-center px-5 py-24 sm:px-8 lg:px-12"
         >
           <HeroBackground />
           <div className="pointer-events-none absolute inset-0 z-[1]">
             {particlesReady ? (
               <Suspense fallback={null}>
-                <ParticleNetwork />
+                <ParticleNetwork quality={constrainedDevice ? 'reduced' : 'full'} />
               </Suspense>
             ) : null}
           </div>
@@ -145,49 +198,64 @@ function App() {
             variants={container}
             initial="hidden"
             animate="show"
-            className="relative z-10 text-center space-y-8 w-full max-w-4xl px-1"
+            className="relative z-10 w-full max-w-5xl space-y-8 px-1 text-left"
           >
+            <m.div
+              variants={item}
+              className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-3 py-1.5 text-xs font-medium uppercase tracking-[0.16em] text-white/70 shadow-sm backdrop-blur-md"
+            >
+              <span className="relative flex size-2" aria-hidden>
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+                <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
+              </span>
+              Available for cloud and platform work
+            </m.div>
+
             <m.h1
               variants={item}
-              className="text-[clamp(2.75rem,10vw,8.5rem)] md:text-9xl font-bold tracking-tighter leading-[0.95]"
+              className="font-display text-[clamp(3.4rem,9.2vw,8.25rem)] font-medium tracking-tight leading-[1.02]"
             >
-              <span className="block text-foreground drop-shadow-[0_0_40px_rgba(0,0,0,0.45)]">
-                <ScrambleText text="Idan" interval={50} hoverTrigger={true} />
+              <span className="mb-3 block text-2xl font-normal tracking-normal text-white/45 sm:text-3xl md:text-4xl">
+                <ScrambleText text="Idan Botbol" interval={45} hoverTrigger={true} />
               </span>
-              <span className="text-gradient block mt-2 drop-shadow-[0_0_32px_rgba(0,0,0,0.35)]">
-                <ScrambleText text="Botbol" interval={50} hoverTrigger={true} />
-              </span>
+              <span className="text-gradient block">Architecting</span>
+              <span className="block text-white">Resilient Systems.</span>
             </m.h1>
 
             <m.p
               variants={item}
-              className="mx-auto max-w-2xl text-lg font-light leading-relaxed text-muted-foreground sm:text-xl md:text-2xl"
+              className="max-w-2xl text-lg font-light leading-relaxed text-white/60 sm:text-xl md:text-2xl"
             >
-              <span className="font-medium text-foreground">Cloud Architect / DevOps Engineer</span> with
-              <span className="font-medium text-foreground"> backend depth</span>, building secure,
+              <span className="font-medium text-white/90">Cloud Architect / DevOps Engineer</span> with
+              <span className="font-medium text-white/90"> backend depth</span>, building secure,
               cost-aware cloud platforms and reliable production systems.
             </m.p>
 
+
             <m.div
               variants={item}
-              className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 pt-6 sm:pt-8"
+              className="-ml-5 flex w-screen justify-center pt-4 sm:-ml-8 lg:-ml-12"
             >
-              <SocialLink href="https://github.com/Idanbot" icon={<GithubIcon className="size-6" />} label="GitHub" />
-              <SocialLink
-                href="https://www.linkedin.com/in/idanbotbol/"
-                icon={<LinkedinIcon className="size-6" />}
-                label="LinkedIn"
-              />
-              <SocialLink href="mailto:idan@idanbot.uk" icon={<MailIcon className="size-6" />} label="Email" />
+              <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-black/42 p-1.5 shadow-[0_18px_70px_-46px_rgba(96,165,250,0.55)] backdrop-blur-xl">
+                <SocialLink href="https://github.com/Idanbot" icon={<GithubIcon className="size-5" />} label="GitHub" />
+                <SocialLink
+                  href="https://www.linkedin.com/in/idanbotbol/"
+                  icon={<LinkedinIcon className="size-5" />}
+                  label="LinkedIn"
+                />
+                <SocialLink href="mailto:idan@idanbot.uk" icon={<MailIcon className="size-5" />} label="Email" />
+              </div>
             </m.div>
 
-            <m.div variants={item} className="flex justify-center pt-2">
+            <m.div variants={item} className="-ml-5 flex w-screen justify-center pt-1 sm:-ml-8 lg:-ml-12">
               <button
                 type="button"
                 onClick={requestTerminal}
-                className="inline-flex min-h-11 max-w-[calc(100vw-2rem)] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2.5 text-left text-sm text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-primary/40 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+                onFocus={preloadTerminal}
+                onPointerEnter={preloadTerminal}
+                className="inline-flex min-h-11 max-w-[calc(100vw-2rem)] items-center justify-center gap-2 rounded-full border border-white/10 bg-white/[0.06] px-4 py-2.5 text-left text-sm text-muted-foreground shadow-sm backdrop-blur-sm transition-colors hover:border-cloud/40 hover:bg-white/10 hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-cloud/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
               >
-                <Terminal className="size-4 shrink-0 text-primary" aria-hidden />
+                <Terminal className="size-4 shrink-0 text-cloud" aria-hidden />
                 <span>
                   Try the <span className="font-medium text-white">terminal</span>
                 </span>
@@ -198,28 +266,16 @@ function App() {
             </m.div>
           </m.div>
 
-          <m.div
-            initial={prefersReducedMotion ? { opacity: 1 } : { opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={
-              prefersReducedMotion ? { duration: 0 } : { delay: 1.5, duration: 1 }
-            }
-            className="absolute bottom-[calc(5.5rem+env(safe-area-inset-bottom,0px))] left-1/2 z-10 flex -translate-x-1/2 flex-col items-center gap-2 lg:bottom-10 lg:pb-0"
-          >
-            <m.div
-              animate={prefersReducedMotion ? false : { y: [0, 10, 0] }}
-              transition={{ repeat: Infinity, duration: 1.5 }}
-              className="h-12 w-1 rounded-full bg-linear-to-b from-primary/55 to-transparent"
-            />
-          </m.div>
         </section>
 
         <LazyOnVisible
           id="skills"
-          rootMargin="300px 0px"
+          prefetch={preloadStack}
+          prefetchRootMargin="900px 0px"
+          renderRootMargin="260px 0px"
           fallback={
             <section
-              className="mx-auto min-h-[300px] max-w-5xl snap-start rounded-xl border border-white/5 bg-white/[0.02] animate-pulse"
+              className="cv-skills mx-auto min-h-[300px] max-w-5xl snap-start rounded-xl border border-white/5 bg-white/[0.02] animate-pulse"
             />
           }
           isServer={isServer}
@@ -227,7 +283,7 @@ function App() {
           <Suspense
             fallback={
               <section
-                className="mx-auto min-h-[300px] max-w-5xl snap-start rounded-xl border border-white/5 bg-white/[0.02] animate-pulse"
+                className="cv-skills mx-auto min-h-[300px] max-w-5xl snap-start rounded-xl border border-white/5 bg-white/[0.02] animate-pulse"
               />
             }
           >
@@ -235,23 +291,19 @@ function App() {
           </Suspense>
         </LazyOnVisible>
 
-        <section id="history" className="py-24 sm:py-32 px-4 sm:px-6 max-w-7xl mx-auto snap-start">
-          <m.div
-            initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 50 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            transition={prefersReducedMotion ? { duration: 0 } : undefined}
-            viewport={{ once: true, margin: '-100px' }}
-            className="mb-12 sm:mb-16 text-center"
-          >
+        <section id="history" className="cv-history py-24 sm:py-32 px-4 sm:px-6 max-w-7xl mx-auto snap-start">
+          <div className="scroll-reveal mb-12 sm:mb-16 text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 sm:mb-6">
-              Commit <span className="text-gradient">Log</span>
+              Professional <span className="text-gradient">Trajectory</span>
             </h2>
             <p className="px-2 text-base text-muted-foreground sm:text-lg">
-              Changelog of my professional journey.
+              A concise timeline of roles, systems, and platform work.
             </p>
-          </m.div>
+          </div>
           <LazyOnVisible
-            rootMargin="450px 0px"
+            prefetch={preloadHistory}
+            prefetchRootMargin="900px 0px"
+            renderRootMargin="420px 0px"
             fallback={
               <div className="min-h-[280px] max-w-4xl mx-auto rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
             }
@@ -267,9 +319,11 @@ function App() {
           </LazyOnVisible>
         </section>
 
-        <section id="monitor" className="snap-start">
+        <section id="monitor" className="cv-monitor snap-start">
           <LazyOnVisible
-            rootMargin="450px 0px"
+            prefetch={preloadStatus}
+            prefetchRootMargin="900px 0px"
+            renderRootMargin="420px 0px"
             fallback={
               <div className="min-h-[180px] max-w-5xl mx-auto px-4 sm:px-6 rounded-xl border border-white/5 bg-white/[0.02] animate-pulse" />
             }
@@ -305,6 +359,42 @@ function App() {
   );
 }
 
+
+function DesktopNav({ activeSection }: { activeSection: string }) {
+  const items = [
+    { id: 'hero', label: 'Profile' },
+    { id: 'skills', label: 'Stack' },
+    { id: 'history', label: 'Experience' },
+    { id: 'monitor', label: 'Live' },
+  ];
+
+  return (
+    <nav
+      className="fixed left-1/2 top-6 z-[70] hidden w-[92%] max-w-lg -translate-x-1/2 rounded-full border border-white/10 bg-black/58 px-4 py-2.5 shadow-[0_16px_70px_-42px_rgba(255,255,255,0.45)] backdrop-blur-xl lg:block"
+      aria-label="Primary navigation"
+    >
+      <ul className="flex items-center justify-between gap-1 text-sm font-medium text-white/60">
+        {items.map((navItem) => {
+          const active = activeSection === navItem.id;
+          return (
+            <li key={navItem.id}>
+              <a
+                href={`#${navItem.id}`}
+                aria-current={active ? 'page' : undefined}
+                className={`rounded-full px-3 py-1.5 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:ring-2 focus-visible:ring-cloud/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background ${
+                  active ? 'bg-white/[0.075] text-white' : ''
+                }`}
+              >
+                {navItem.label}
+              </a>
+            </li>
+          );
+        })}
+      </ul>
+    </nav>
+  );
+}
+
 function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   const isMail = href.startsWith('mailto:');
   const reduced = usePrefersReducedMotion();
@@ -314,12 +404,15 @@ function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode
       {...(isMail ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
       whileHover={reduced ? undefined : { scale: 1.05 }}
       whileTap={reduced ? undefined : { scale: 0.97 }}
-      className="icon-link group relative inline-flex min-h-12 min-w-12 items-center justify-center rounded-2xl border border-white/10 bg-white/5 p-3 shadow-sm outline-none backdrop-blur-md transition-all hover:border-primary/35 hover:bg-white/10 hover:shadow-lg focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:p-4"
+      className="icon-link group relative inline-flex h-11 w-11 items-center justify-center rounded-full border border-transparent bg-white/[0.035] p-2.5 text-white/58 shadow-sm outline-none backdrop-blur-md transition-[border-color,background-color,color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[0.025rem] hover:border-white/16 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_14px_44px_-26px_rgba(255,255,255,0.72)] focus-visible:ring-2 focus-visible:ring-cloud/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-12 sm:w-12 sm:p-3"
       aria-label={label}
     >
-      <div className="flex items-center justify-center text-muted-foreground transition-colors group-hover:text-foreground">
+      <span className="pointer-events-none absolute bottom-[calc(100%+0.65rem)] left-1/2 -translate-x-1/2 translate-y-1 rounded-full border border-white/10 bg-black/80 px-2.5 py-1 text-xs font-medium text-white/78 opacity-0 shadow-[0_12px_36px_-24px_rgba(255,255,255,0.8)] backdrop-blur-md transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+        {label}
+      </span>
+      <span className="flex shrink-0 items-center justify-center transition-colors duration-100 group-hover:text-white group-focus-visible:text-white">
         {icon}
-      </div>
+      </span>
     </m.a>
   );
 }
@@ -329,16 +422,40 @@ function LazyOnVisible({
   fallback,
   id,
   isServer,
-  rootMargin = '600px 0px',
+  prefetch,
+  prefetchRootMargin = '900px 0px',
+  renderRootMargin = '600px 0px',
 }: {
   children: React.ReactNode;
   fallback: React.ReactNode;
   id?: string;
   isServer: boolean;
-  rootMargin?: string;
+  prefetch?: () => Promise<unknown>;
+  prefetchRootMargin?: string;
+  renderRootMargin?: string;
 }) {
   const [shouldRender, setShouldRender] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+  const didPrefetch = useRef(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!prefetch || didPrefetch.current || !node || !('IntersectionObserver' in window)) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          didPrefetch.current = true;
+          void prefetch();
+          observer.disconnect();
+        }
+      },
+      { rootMargin: prefetchRootMargin }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [prefetch, prefetchRootMargin]);
 
   useEffect(() => {
     if (shouldRender) return;
@@ -352,15 +469,19 @@ function LazyOnVisible({
       ([entry]) => {
         if (entry.isIntersecting) {
           setShouldRender(true);
+          if (prefetch && !didPrefetch.current) {
+            didPrefetch.current = true;
+            void prefetch();
+          }
           observer.disconnect();
         }
       },
-      { rootMargin }
+      { rootMargin: renderRootMargin }
     );
 
     observer.observe(node);
     return () => observer.disconnect();
-  }, [rootMargin, shouldRender]);
+  }, [prefetch, renderRootMargin, shouldRender]);
 
   if (isServer || !shouldRender) {
     return (

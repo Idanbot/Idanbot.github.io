@@ -15,11 +15,11 @@ function TracingBeamsInner() {
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      <svg className="w-full h-full opacity-30">
+      <svg className="h-full w-full opacity-20">
         <defs>
           <linearGradient id="beam-gradient" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop offset="0%" stopColor="transparent" />
-            <stop offset="50%" stopColor="#d92121" />
+            <stop offset="50%" stopColor="#3b82f6" />
             <stop offset="100%" stopColor="transparent" />
           </linearGradient>
         </defs>
@@ -56,7 +56,7 @@ function TracingBeamsInner() {
           initial={{ strokeDashoffset: 0 }}
           animate={{ strokeDashoffset: -2200 }}
           transition={{ duration: 15, repeat: Infinity, ease: 'linear' }}
-          opacity="0.5"
+          opacity="0.35"
         />
       </svg>
     </div>

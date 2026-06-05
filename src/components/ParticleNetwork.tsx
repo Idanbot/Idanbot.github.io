@@ -3,7 +3,7 @@ import Particles, { initParticlesEngine } from '@tsparticles/react';
 import { loadSlim } from '@tsparticles/slim';
 import { useInView, useReducedMotion } from 'framer-motion';
 
-export const ParticleNetwork = () => {
+export const ParticleNetwork = ({ quality = 'full' }: { quality?: 'full' | 'reduced' }) => {
   const [init, setInit] = useState(false);
   const reduceMotion = useReducedMotion();
   const containerRef = useRef<HTMLDivElement>(null);
@@ -41,8 +41,11 @@ export const ParticleNetwork = () => {
     if (!inView || reduceMotion) setInit(false);
   }, [inView, reduceMotion]);
 
-  const particleCount = isCoarsePointer ? 26 : 44;
-  const fpsLimit = isCoarsePointer ? 45 : 72;
+  const isReducedQuality = quality === 'reduced';
+  const particleCount = isReducedQuality ? (isCoarsePointer ? 16 : 24) : isCoarsePointer ? 26 : 44;
+  const fpsLimit = isReducedQuality ? (isCoarsePointer ? 30 : 42) : isCoarsePointer ? 45 : 72;
+  const moveSpeed = isReducedQuality ? 0.45 : 0.72;
+  const linkOpacity = isReducedQuality ? 0.22 : 0.32;
 
   if (reduceMotion) {
     return <div ref={containerRef} className="absolute inset-0 pointer-events-none" aria-hidden />;
@@ -60,7 +63,7 @@ export const ParticleNetwork = () => {
             fpsLimit,
             interactivity: {
               events: {
-                onHover: { enable: !isCoarsePointer, mode: 'repulse' },
+                onHover: { enable: !isCoarsePointer && !isReducedQuality, mode: 'repulse' },
                 resize: { enable: true },
               },
               modes: {
@@ -68,12 +71,12 @@ export const ParticleNetwork = () => {
               },
             },
             particles: {
-              color: { value: '#d92121' },
+              color: { value: '#60a5fa' },
               links: {
                 color: '#8e929c',
                 distance: 140,
                 enable: true,
-                opacity: 0.32,
+                opacity: linkOpacity,
                 width: 1,
               },
               move: {
@@ -81,7 +84,7 @@ export const ParticleNetwork = () => {
                 enable: true,
                 outModes: { default: 'bounce' },
                 random: false,
-                speed: 0.72,
+                speed: moveSpeed,
                 straight: false,
               },
               number: {
