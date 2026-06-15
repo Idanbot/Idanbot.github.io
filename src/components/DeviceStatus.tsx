@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { m, Variants } from 'framer-motion';
-import { Server, Cpu, RefreshCw, AlertCircle, Clock } from 'lucide-react';
+import { Server, Cpu, RefreshCw, AlertCircle, Clock, Radio } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
 
@@ -9,7 +9,12 @@ interface Device {
   name: string;
   heartbeat: number;
   last_timestamp: string;
+  last_healthy_timestamp?: string | null;
+  unavailable_since_timestamp?: string | null;
+  alert_sent_at?: string | null;
 }
+
+const HEARTBEAT_ENDPOINT = 'https://device-heartbeat-monitor.botbolidan.workers.dev/';
 
 type DeviceStatusType = 'online' | 'stale' | 'offline';
 
@@ -36,6 +41,18 @@ function getRelativeTime(timestampStr: string): string {
   } catch {
     return 'unknown';
   }
+}
+
+function formatTimestamp(timestamp?: string | null): string {
+  if (!timestamp) return 'none';
+  const date = new Date(timestamp);
+  if (Number.isNaN(date.getTime())) return 'unknown';
+  return `${getRelativeTime(timestamp)} · ${date.toLocaleString([], {
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })}`;
 }
 
 function getDeviceStatus(device: Device): DeviceStatusType {
@@ -104,7 +121,7 @@ export const DeviceStatus = () => {
     setError(null);
 
     try {
-      const response = await fetchWithRetry('https://device-heartbeat-monitor.botbolidan.workers.dev/');
+      const response = await fetchWithRetry(HEARTBEAT_ENDPOINT);
       const data: Device[] = await response.json();
       
       // Sort devices: online first, then stale, then offline; then alphabetically by name
@@ -193,6 +210,14 @@ export const DeviceStatus = () => {
           <h2 className="text-xl font-bold text-white mt-1 sm:text-2xl">
             Live Device Heartbeats
           </h2>
+          {!loading && !error && devices.length > 0 ? (
+            <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+              <Radio size={12} className="text-cloud" aria-hidden />
+              <span>GET returned {devices.length} devices</span>
+              <span aria-hidden>·</span>
+              <span>health, unavailable, and alert timestamps available</span>
+            </p>
+          ) : null}
         </div>
 
         <button
@@ -310,6 +335,19 @@ export const DeviceStatus = () => {
                           <span className="truncate" title={new Date(device.last_timestamp).toLocaleString()}>
                             {isOnline ? `Pinged ${relativeTime}` : `Last active ${relativeTime}`}
                           </span>
+                        </div>
+                        <div className="grid gap-1 pt-1 text-[10px] leading-relaxed text-muted-foreground/80 sm:text-xs">
+                          <span>Healthy: {formatTimestamp(device.last_healthy_timestamp ?? device.last_timestamp)}</span>
+                          {device.unavailable_since_timestamp ? (
+                            <span className="text-amber-300/85">
+                              Unavailable since: {formatTimestamp(device.unavailable_since_timestamp)}
+                            </span>
+                          ) : null}
+                          {device.alert_sent_at ? (
+                            <span className="text-red-300/85">
+                              Alert sent: {formatTimestamp(device.alert_sent_at)}
+                            </span>
+                          ) : null}
                         </div>
                       </div>
                     </div>

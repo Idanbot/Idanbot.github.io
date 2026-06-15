@@ -477,77 +477,88 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
 
         {isOpen && !showMonitor && (
           <m.div
-            ref={modalRef}
-            role="dialog"
-            aria-modal="true"
-            aria-label="Terminal"
-            initial={reduceMotionFm ? { y: 0, opacity: 1 } : { y: '-100%' }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={reduceMotionFm ? { opacity: 0 } : { y: '-100%' }}
-            transition={
-              reduceMotionFm
-                ? { duration: 0.12 }
-                : { type: 'spring', damping: 25, stiffness: 200 }
-            }
-            className="liquid-glass fixed left-0 right-0 top-0 z-[100] flex h-[50vh] flex-col overflow-hidden rounded-b-3xl border-x-0 border-t-0 font-mono text-sm md:text-base"
+            className="fixed inset-0 z-[100] flex items-start justify-center bg-black/48 p-3 pt-[min(8vh,4rem)] backdrop-blur-sm sm:p-6 md:items-center md:pt-6"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: reduceMotionFm ? 0.08 : 0.16 }}
+            onMouseDown={(event) => {
+              if (event.target === event.currentTarget) setIsOpen(false);
+            }}
           >
-            <div className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-2">
-              <span className="flex items-center gap-2 text-primary">
-                <TerminalIcon size={14} aria-hidden /> idan@portfolio:~
-              </span>
-              <button
-                type="button"
-                onClick={() => setIsOpen(false)}
-                aria-label="Close terminal"
-                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/75 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+            <m.div
+              ref={modalRef}
+              role="dialog"
+              aria-modal="true"
+              aria-label="Terminal"
+              initial={reduceMotionFm ? { opacity: 1, scale: 1 } : { opacity: 0, y: 18, scale: 0.96 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={reduceMotionFm ? { opacity: 0 } : { opacity: 0, y: 18, scale: 0.96 }}
+              transition={
+                reduceMotionFm
+                  ? { duration: 0.12 }
+                  : { type: 'spring', damping: 26, stiffness: 240 }
+              }
+              className="liquid-glass z-[1] flex h-[min(78dvh,34rem)] w-full max-w-4xl flex-col overflow-hidden rounded-3xl font-mono text-sm md:text-base"
+            >
+              <div className="relative z-[1] flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-2">
+                <span className="flex items-center gap-2 text-primary">
+                  <TerminalIcon size={14} aria-hidden /> idan@portfolio:~
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setIsOpen(false)}
+                  aria-label="Close terminal"
+                  className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/75 focus-visible:ring-offset-2 focus-visible:ring-offset-card"
+                >
+                  <X size={18} aria-hidden />
+                </button>
+              </div>
+
+              <div
+                className="relative z-[1] flex-1 space-y-2 overflow-y-auto p-4 text-gray-300"
+                onClick={() => inputRef.current?.focus()}
+                aria-live="polite"
+                aria-relevant="additions"
               >
-                <X size={18} aria-hidden />
-              </button>
-            </div>
+                {history.length === 0 ? (
+                  <p className="text-sm text-gray-500">
+                    Screen cleared. Type <kbd className="rounded border border-white/15 bg-black/40 px-1 font-mono">help</kbd> to list
+                    commands again.
+                  </p>
+                ) : (
+                  history.map((line, i) => (
+                    <div key={i} className="whitespace-pre-wrap break-words">
+                      {line}
+                    </div>
+                  ))
+                )}
+                <div ref={bottomRef} />
+              </div>
 
-            <div
-              className="flex-1 space-y-2 overflow-y-auto p-4 text-gray-300"
-              onClick={() => inputRef.current?.focus()}
-              aria-live="polite"
-              aria-relevant="additions"
-            >
-              {history.length === 0 ? (
-                <p className="text-sm text-gray-500">
-                  Screen cleared. Type <kbd className="rounded border border-white/15 bg-black/40 px-1 font-mono">help</kbd> to list
-                  commands again.
-                </p>
-              ) : (
-                history.map((line, i) => (
-                  <div key={i} className="whitespace-pre-wrap break-words">
-                    {line}
-                  </div>
-                ))
-              )}
-              <div ref={bottomRef} />
-            </div>
-
-            <form
-              onSubmit={handleCommand}
-              className="flex items-center gap-2 border-t border-white/10 bg-black/20 p-4"
-            >
-              <span className="text-primary" aria-hidden>
-                ❯
-              </span>
-              <input
-                ref={inputRef}
-                type="text"
-                value={input}
-                onChange={(e) => {
-                  tabCycleRef.current = 0;
-                  setInput(e.target.value);
-                }}
-                onKeyDown={handleInputKeyDown}
-                className="flex-1 border-none bg-transparent text-white outline-none placeholder:text-gray-600 focus-visible:ring-0"
-                placeholder="Type 'help'… Tab completes"
-                aria-label="Terminal command input"
-                autoFocus
-              />
-            </form>
+              <form
+                onSubmit={handleCommand}
+                className="relative z-[1] flex items-center gap-2 border-t border-white/10 bg-black/20 p-4"
+              >
+                <span className="text-primary" aria-hidden>
+                  ❯
+                </span>
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => {
+                    tabCycleRef.current = 0;
+                    setInput(e.target.value);
+                  }}
+                  onKeyDown={handleInputKeyDown}
+                  className="flex-1 border-none bg-transparent text-white outline-none placeholder:text-gray-600 focus-visible:ring-0"
+                  placeholder="Type 'help'… Tab completes"
+                  aria-label="Terminal command input"
+                  autoFocus
+                />
+              </form>
+            </m.div>
           </m.div>
         )}
       </AnimatePresence>
