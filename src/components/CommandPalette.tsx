@@ -45,7 +45,7 @@ export const CommandPalette = ({ startOpen = false }: { startOpen?: boolean }) =
       open={open}
       onOpenChange={setOpen}
       label="Global Command Menu"
-      className="fixed top-1/2 left-1/2 z-[999] w-[min(100vw-1.5rem,640px)] max-h-[min(85dvh,560px)] -translate-x-1/2 -translate-y-1/2 overflow-hidden rounded-xl border border-white/10 bg-card p-2 shadow-2xl outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="liquid-glass fixed top-1/2 left-1/2 z-[999] w-[min(100vw-1.5rem,640px)] max-h-[min(85dvh,560px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-2 outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
       overlayClassName="fixed inset-0 z-[998] bg-black/80 backdrop-blur-sm"
     >
       <div className="flex items-center border-b border-white/10 px-3 pb-2 mb-2">

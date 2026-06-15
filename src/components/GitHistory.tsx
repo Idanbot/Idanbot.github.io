@@ -1,82 +1,9 @@
 import { m } from 'framer-motion';
 import { Building2, CalendarDays, GitBranch, Inbox, Tag } from 'lucide-react';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { profile } from '@/data/profile';
 
-const commits = [
-  {
-    hash: 'f6c4a21',
-    msg: 'feat: Cloud Architect / DevOps Engineer',
-    company: 'WideOps Ltd',
-    date: 'Feb 2026 - Present',
-    tag: 'v4.0.0',
-    type: 'feat',
-    accent: 'cloud',
-    summary: 'Customer-facing cloud architecture and platform engineering at a Google Cloud Premier Partner.',
-    highlights: [
-      'Design and review cloud-native architectures on Google Cloud and AWS.',
-      'Build secure GKE, Terraform, IAM, networking, Cloud SQL, Artifact Registry, and CI/CD patterns.',
-      'Support discovery, modernization planning, cost optimization, and observability decisions.',
-    ],
-  },
-  {
-    hash: '8e7f2a1',
-    msg: 'feat: DevOps Engineer Bootcamp',
-    company: 'Infinity Labs R&D',
-    date: '2025 - 2026',
-    tag: 'v3.0.0',
-    type: 'feat',
-    accent: 'platform',
-    summary: 'Intensive DevOps lifecycle training across cloud, GitOps, automation, and monitoring.',
-    highlights: [
-      'Practiced Kubernetes orchestration, AWS architecture, and Argo CD delivery workflows.',
-      'Automated infrastructure and operations with Python, Ansible, and Linux tooling.',
-      'Built monitoring flows with ELK, Prometheus, and production-style troubleshooting.',
-    ],
-  },
-  {
-    hash: '7f2a9c1',
-    msg: 'feat: Software Engineer',
-    company: 'Perion Network',
-    date: '2022 - 2024',
-    tag: 'v2.4.0',
-    type: 'feat',
-    accent: 'backend',
-    summary: 'Backend engineering on high-throughput Java/Spring services connected to AWS systems.',
-    highlights: [
-      'Built and optimized microservices processing millions of daily requests.',
-      'Worked with Java, Spring Boot, AWS EC2/EKS, and production backend operations.',
-      'Implemented event-driven flows with RabbitMQ and SQS for resilient async processing.',
-    ],
-  },
-  {
-    hash: 'b4d8e2f',
-    msg: 'docs: DevOps Introduction Course',
-    company: 'John Bryce',
-    date: '2022',
-    tag: 'v1.5.0',
-    type: 'chore',
-    accent: 'delivery',
-    summary: 'Foundational systems, scripting, and containerization training.',
-    highlights: [
-      'Covered Linux administration, shell scripting, Docker, and Kubernetes basics.',
-      'Connected infrastructure fundamentals with practical deployment workflows.',
-    ],
-  },
-  {
-    hash: 'c9a1b3d',
-    msg: 'init: Full Stack Developer Bootcamp',
-    company: 'John Bryce',
-    date: '2021 - 2022',
-    tag: 'v1.0.0',
-    type: 'init',
-    accent: 'data',
-    summary: 'Full-stack foundation across Java backend, React frontend, and SQL databases.',
-    highlights: [
-      'Built applications with Java Spring Boot, React, Redux, and relational schemas.',
-      'Developed the backend foundation that now supports platform and cloud architecture work.',
-    ],
-  },
-];
+const commits = [...profile.experience];
 
 export const GitHistory = () => {
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -84,7 +11,7 @@ export const GitHistory = () => {
   if (commits.length === 0) {
     return (
       <div
-        className="mx-auto max-w-4xl rounded-xl border border-white/10 bg-card/40 p-10 text-center font-mono"
+        className="liquid-glass mx-auto max-w-4xl rounded-2xl p-10 text-center font-mono"
         role="status"
       >
         <Inbox className="mx-auto mb-4 size-10 text-muted-foreground" aria-hidden />
@@ -138,7 +65,7 @@ export const GitHistory = () => {
               aria-hidden
             />
 
-            <article className="group rounded-xl premium-card border border-white/10 bg-card/50 p-4 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-cloud/25 hover:bg-white/[0.045] sm:p-5">
+            <article className="group rounded-2xl premium-card border border-white/10 bg-card/50 p-4 transition-[border-color,background-color,transform] hover:-translate-y-0.5 hover:border-cloud/25 hover:bg-white/[0.045] sm:p-5">
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <span className="rounded border border-white/10 bg-white/[0.045] px-2 py-0.5 text-xs text-white/60">
                   {commit.hash}

@@ -1,0 +1,102 @@
+export const profile = {
+  name: 'Idan Botbol',
+  role: 'Cloud Architect / DevOps Engineer',
+  availability: 'Available for cloud and platform work',
+  hero: {
+    eyebrowName: 'Idan Botbol',
+    headlineAccent: 'Architecting',
+    headline: 'Resilient Systems.',
+    description:
+      'with backend depth, building secure, cost-aware cloud platforms and reliable production systems.',
+  },
+  socials: [
+    { label: 'GitHub', href: 'https://github.com/Idanbot', kind: 'github' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/idanbotbol/', kind: 'linkedin' },
+    { label: 'Email', href: 'mailto:idan@idanbot.uk', kind: 'email' },
+  ],
+  certification: {
+    name: 'Google Cloud Certified - Professional Cloud Architect',
+    issued: '2026-02-18',
+    expires: '2028-02-18',
+    issuedLabel: '18 February 2026',
+    expiresLabel: '18 February 2028',
+    credlyUrl: 'https://www.credly.com/badges/58dc8f3f-2958-40eb-a2be-5584dfa2a9ec',
+  },
+  experience: [
+    {
+      hash: 'f6c4a21',
+      msg: 'feat: Cloud Architect / DevOps Engineer',
+      company: 'WideOps Ltd',
+      date: 'Feb 2026 - Present',
+      tag: 'v4.0.0',
+      type: 'feat',
+      accent: 'cloud',
+      summary: 'Customer-facing cloud architecture and platform engineering at a Google Cloud Premier Partner.',
+      highlights: [
+        'Design and review cloud-native architectures on Google Cloud and AWS.',
+        'Build secure GKE, Terraform, IAM, networking, Cloud SQL, Artifact Registry, and CI/CD patterns.',
+        'Support discovery, modernization planning, cost optimization, and observability decisions.',
+      ],
+    },
+    {
+      hash: '8e7f2a1',
+      msg: 'feat: DevOps Engineer Bootcamp',
+      company: 'Infinity Labs R&D',
+      date: '2025 - 2026',
+      tag: 'v3.0.0',
+      type: 'feat',
+      accent: 'platform',
+      summary: 'Intensive DevOps lifecycle training across cloud, GitOps, automation, and monitoring.',
+      highlights: [
+        'Practiced Kubernetes orchestration, AWS architecture, and Argo CD delivery workflows.',
+        'Automated infrastructure and operations with Python, Ansible, and Linux tooling.',
+        'Built monitoring flows with ELK, Prometheus, and production-style troubleshooting.',
+      ],
+    },
+    {
+      hash: '7f2a9c1',
+      msg: 'feat: Software Engineer',
+      company: 'Perion Network',
+      date: '2022 - 2024',
+      tag: 'v2.4.0',
+      type: 'feat',
+      accent: 'backend',
+      summary: 'Backend engineering on high-throughput Java/Spring services connected to AWS systems.',
+      highlights: [
+        'Built and optimized microservices processing millions of daily requests.',
+        'Worked with Java, Spring Boot, AWS EC2/EKS, and production backend operations.',
+        'Implemented event-driven flows with RabbitMQ and SQS for resilient async processing.',
+      ],
+    },
+    {
+      hash: 'b4d8e2f',
+      msg: 'docs: DevOps Introduction Course',
+      company: 'John Bryce',
+      date: '2022',
+      tag: 'v1.5.0',
+      type: 'chore',
+      accent: 'delivery',
+      summary: 'Foundational systems, scripting, and containerization training.',
+      highlights: [
+        'Covered Linux administration, shell scripting, Docker, and Kubernetes basics.',
+        'Connected infrastructure fundamentals with practical deployment workflows.',
+      ],
+    },
+    {
+      hash: 'c9a1b3d',
+      msg: 'init: Full Stack Developer Bootcamp',
+      company: 'John Bryce',
+      date: '2021 - 2022',
+      tag: 'v1.0.0',
+      type: 'init',
+      accent: 'data',
+      summary: 'Full-stack foundation across Java backend, React frontend, and SQL databases.',
+      highlights: [
+        'Built applications with Java Spring Boot, React, Redux, and relational schemas.',
+        'Developed the backend foundation that now supports platform and cloud architecture work.',
+      ],
+    },
+  ],
+} as const;
+
+export type Profile = typeof profile;

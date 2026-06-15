@@ -11,7 +11,7 @@ const items = [
 export const MobileNav = ({ activeSection }: { activeSection: string }) => {
   return (
     <nav
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-white/10 bg-background/95 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 shadow-[0_-8px_32px_rgba(0,0,0,0.45)] backdrop-blur-xl lg:hidden"
+      className="liquid-glass fixed inset-x-0 bottom-0 z-50 rounded-t-3xl border-x-0 border-b-0 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-1 lg:hidden"
       aria-label="Section navigation"
     >
       <ul className="mx-auto grid max-w-lg grid-cols-4 gap-1 px-2">
@@ -21,7 +21,7 @@ export const MobileNav = ({ activeSection }: { activeSection: string }) => {
             <li key={id} className="min-w-0">
               <a
                 href={`#${id}`}
-                className="flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl py-2 outline-none tap-highlight-transparent focus-visible:ring-2 focus-visible:ring-primary/75 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-white/5"
+                className="relative z-[1] flex min-h-14 min-w-0 flex-col items-center justify-center gap-1 rounded-xl py-2 outline-none tap-highlight-transparent focus-visible:ring-2 focus-visible:ring-primary/75 focus-visible:ring-offset-2 focus-visible:ring-offset-background active:bg-white/5"
                 aria-current={active ? 'page' : undefined}
               >
                 <m.span

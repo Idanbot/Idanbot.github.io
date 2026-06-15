@@ -11,6 +11,7 @@ interface PerformanceWithMemory extends Performance {
 }
 import { SystemMonitor } from './SystemMonitor';
 import { OPEN_TERMINAL_EVENT } from '@/lib/site-events';
+import { profile } from '@/data/profile';
 
 const TERMINAL_COMMANDS = [
   'about',
@@ -186,7 +187,7 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
         response = 'Starting session...';
         break;
       case 'about':
-        response = 'Idan Botbol: Cloud Architect / DevOps Engineer at WideOps, with backend depth and hands-on GCP, AWS, Kubernetes, Terraform, CI/CD, observability, and production cloud systems.';
+        response = `${profile.name}: ${profile.role} at ${profile.experience[0].company}, with backend depth and hands-on GCP, AWS, Kubernetes, Terraform, CI/CD, observability, and production cloud systems.`;
         break;
       case 'skills':
         response =
@@ -194,10 +195,10 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
         break;
       case 'cat':
         if (args[0] === 'contact.md') {
-          response = 'Email: idan@idanbot.uk | GitHub: @Idanbot';
+          response = `Email: ${profile.socials.find((social) => social.kind === 'email')?.href.replace('mailto:', '') ?? 'idan@idanbot.uk'} | GitHub: @Idanbot`;
         } else if (args[0] === 'roadmap.txt') {
           response =
-            'GCP Professional Cloud Architect (PCA) — see Stack section + Credly badge link for verification.';
+            `${profile.certification.name} — see Stack section + Credly badge link for verification.`;
         } else {
           const name = args[0] || '(missing path)';
           response = `cat: ${name}: No such file or directory\nHint: try \`cat contact.md\` or \`cat roadmap.txt\`.`;
@@ -488,7 +489,7 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
                 ? { duration: 0.12 }
                 : { type: 'spring', damping: 25, stiffness: 200 }
             }
-            className="fixed left-0 right-0 top-0 z-[100] flex h-[50vh] flex-col overflow-hidden border-b border-primary/35 bg-card/95 font-mono text-sm shadow-2xl backdrop-blur-md md:text-base"
+            className="liquid-glass fixed left-0 right-0 top-0 z-[100] flex h-[50vh] flex-col overflow-hidden rounded-b-3xl border-x-0 border-t-0 font-mono text-sm md:text-base"
           >
             <div className="flex items-center justify-between border-b border-white/5 bg-white/5 px-4 py-2">
               <span className="flex items-center gap-2 text-primary">

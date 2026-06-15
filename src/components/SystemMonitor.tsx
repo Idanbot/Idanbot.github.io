@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { m } from 'framer-motion';
 import { Terminal, Cpu, Activity, GitBranch, Clock, Wifi } from 'lucide-react';
+import { profile } from '@/data/profile';
 
 interface PerformanceWithMemory extends Performance {
   memory?: {
@@ -53,7 +54,7 @@ type DevOpsEngineer struct {
 
 func main() {
     idan := DevOpsEngineer{
-        Name: "Idan Botbol",
+        Name: "${profile.name}",
         Skills: []string{
             "Kubernetes", 
             "AWS", 

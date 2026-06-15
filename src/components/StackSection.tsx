@@ -28,10 +28,11 @@ import {
   SiTypescript,
 } from 'react-icons/si';
 import { m } from 'framer-motion';
-import { Award, ExternalLink, Layers } from 'lucide-react';
+import { Award, ExternalLink, Layers, PauseCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
+import { profile } from '@/data/profile';
 
 const stacks: { name: string; category: string; Icon: IconType }[] = [
   { name: 'Kubernetes', category: 'Platform', Icon: SiKubernetes },
@@ -84,9 +85,6 @@ const categoryAccent = (category: string) => {
   return accents[category] ?? 'stack-accent-primary';
 };
 
-const CREDLY_PCA =
-  'https://www.credly.com/badges/58dc8f3f-2958-40eb-a2be-5584dfa2a9ec';
-
 export const StackSection = ({ className }: { className?: string }) => {
   const prefersReducedMotion = usePrefersReducedMotion();
   const marqueeStacks = prefersReducedMotion ? stacks : [...stacks, ...stacks];
@@ -132,7 +130,7 @@ export const StackSection = ({ className }: { className?: string }) => {
         className={
           prefersReducedMotion
             ? "relative overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            : "stack-marquee-shell relative overflow-hidden focus-within:overflow-x-auto focus-within:[scrollbar-width:none] focus-within:[&::-webkit-scrollbar]:hidden"
+            : "stack-marquee-shell liquid-glass relative overflow-hidden rounded-2xl p-2 focus-within:overflow-x-auto focus-within:[scrollbar-width:none] focus-within:[&::-webkit-scrollbar]:hidden"
         }
         aria-label="Core stack carousel"
       >
@@ -146,6 +144,7 @@ export const StackSection = ({ className }: { className?: string }) => {
         />
         <m.ul
           className={`m-0 flex h-[122px] list-none flex-nowrap items-stretch gap-3 px-1 py-2 md:h-[132px] md:gap-4 ${prefersReducedMotion ? '' : 'stack-marquee'}`}
+          aria-describedby={!prefersReducedMotion ? 'stack-inspect-hint' : undefined}
         >
         {marqueeStacks.map((item, index) => {
           const Icon = item.Icon;
@@ -193,6 +192,15 @@ export const StackSection = ({ className }: { className?: string }) => {
           );
         })}
         </m.ul>
+        {!prefersReducedMotion ? (
+          <div
+            id="stack-inspect-hint"
+            className="stack-inspect-hint pointer-events-none absolute bottom-2 right-3 z-[2] hidden items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-white/48 backdrop-blur-md transition-colors duration-200 md:inline-flex"
+          >
+            <PauseCircle className="size-3" aria-hidden />
+            Hover to pause
+          </div>
+        ) : null}
       </div>
 
       <m.div
@@ -211,16 +219,16 @@ export const StackSection = ({ className }: { className?: string }) => {
               <div className="flex flex-wrap items-center gap-2">
                 <Award className="size-4 shrink-0 text-cloud" aria-hidden />
                 <h3 className="text-sm font-semibold text-card-foreground sm:text-base">
-                  Google Cloud Certified — Professional Cloud Architect
+                  {profile.certification.name}
                 </h3>
               </div>
               <p className="text-xs text-muted-foreground sm:text-sm">
-                Issued <time dateTime="2026-02-18">18 February 2026</time>
+                Issued <time dateTime={profile.certification.issued}>{profile.certification.issuedLabel}</time>
                 {' · '}
-                Expires <time dateTime="2028-02-18">18 February 2028</time>
+                Expires <time dateTime={profile.certification.expires}>{profile.certification.expiresLabel}</time>
               </p>
               <a
-                href={CREDLY_PCA}
+                href={profile.certification.credlyUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 text-sm font-medium text-cloud"
