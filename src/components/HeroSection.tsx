@@ -40,7 +40,7 @@ export function HeroSection({
   return (
     <section
       id="hero"
-      className="relative flex min-h-[92dvh] min-h-screen snap-start flex-col items-start justify-center px-5 py-16 sm:min-h-[100dvh] sm:px-8 sm:py-24 lg:px-12"
+      className="relative flex min-h-[100svh] min-h-[100dvh] snap-start flex-col items-start justify-center overflow-hidden px-5 py-16 sm:px-8 sm:py-24 lg:px-12"
     >
       <HeroBackground />
       <div className="pointer-events-none absolute inset-0 z-[1]">{particleLayer}</div>

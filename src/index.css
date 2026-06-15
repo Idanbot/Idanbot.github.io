@@ -206,7 +206,6 @@
   }
 
   .liquid-glass {
-    position: relative;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.064);
     background:
@@ -218,6 +217,10 @@
       0 22px 76px -52px rgba(147, 197, 253, 0.44);
     backdrop-filter: blur(22px) saturate(1.35);
     -webkit-backdrop-filter: blur(22px) saturate(1.35);
+  }
+
+  .liquid-glass:not(.fixed):not(.absolute):not(.sticky) {
+    position: relative;
   }
 
   .liquid-glass::before {
@@ -254,7 +257,6 @@
   }
 
   .liquid-glass-control {
-    position: relative;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.064);
     background:
@@ -265,6 +267,10 @@
       0 16px 52px -38px rgba(147, 197, 253, 0.38);
     backdrop-filter: blur(18px) saturate(1.3);
     -webkit-backdrop-filter: blur(18px) saturate(1.3);
+  }
+
+  .liquid-glass-control:not(.fixed):not(.absolute):not(.sticky) {
+    position: relative;
   }
 
   .font-display {
@@ -396,17 +402,17 @@
     will-change: transform;
   }
 
-  .stack-marquee-shell:hover .stack-marquee,
-  .stack-marquee-shell:focus-within .stack-marquee {
+  .stack-marquee-shell:has(.stack-card-lid:hover) .stack-marquee,
+  .stack-marquee-shell:has(.stack-card-lid:focus-within) .stack-marquee {
     animation-play-state: paused;
   }
 
-  .stack-marquee-shell:focus-within .stack-marquee {
+  .stack-marquee-shell:has(.stack-card-lid:focus-within) .stack-marquee {
     will-change: auto;
   }
 
-  .stack-marquee-shell:hover .stack-inspect-hint,
-  .stack-marquee-shell:focus-within .stack-inspect-hint {
+  .stack-marquee-shell:has(.stack-card-lid:hover) .stack-inspect-hint,
+  .stack-marquee-shell:has(.stack-card-lid:focus-within) .stack-inspect-hint {
     border-color: color-mix(in oklab, var(--cloud) 32%, transparent);
     color: color-mix(in oklab, var(--cloud) 82%, white 18%);
     background-color: color-mix(in oklab, var(--cloud) 10%, transparent);
