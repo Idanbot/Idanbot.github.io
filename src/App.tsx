@@ -1,5 +1,4 @@
 import React, { Suspense, useEffect, useState } from 'react';
-import { MobileNav } from './components/MobileNav';
 import { TracingBeams } from './components/TracingBeams';
 import { DesktopNav } from './components/DesktopNav';
 import { HeroSection } from './components/HeroSection';
@@ -149,7 +148,6 @@ function App() {
       </a>
       <div className="noise-overlay" aria-hidden />
       <DesktopNav activeSection={activeSection} />
-      <MobileNav activeSection={activeSection} />
       {terminalRequested ? (
         <Suspense fallback={null}>
           <TerminalModal startOpen />
@@ -166,7 +164,7 @@ function App() {
       <main
         id="main-content"
         tabIndex={-1}
-        className="relative w-full scroll-smooth snap-y snap-proximity pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] outline-none md:snap-mandatory lg:pb-0"
+        className="relative w-full scroll-smooth snap-y snap-proximity outline-none md:snap-mandatory"
       >
         <HeroSection
           particleLayer={particleLayer}
@@ -227,7 +225,7 @@ function App() {
         </section>
       </main>
 
-      <footer className="relative z-[60] border-t border-white/5 bg-black/50 backdrop-blur-md py-8 sm:py-12 text-center pb-[calc(5.75rem+env(safe-area-inset-bottom,0px))] lg:pb-12">
+      <footer className="relative z-[60] border-t border-white/5 bg-black/50 py-8 text-center backdrop-blur-md sm:py-12">
         <p className="mx-auto max-w-2xl px-4 text-sm text-muted-foreground md:text-base">
           © {new Date().getFullYear()} Idan Botbol.
           <span className="hidden md:inline">
@@ -237,8 +235,7 @@ function App() {
             <kbd className="bg-white/10 px-1 rounded">K</kbd> for menu
           </span>
           <span className="mt-2 block font-mono text-xs leading-relaxed text-muted-foreground/80 md:hidden">
-            Bottom nav: sections · <code className="bg-white/10 px-1 rounded">~</code> terminal · ⌘K
-            menu
+            <code className="bg-white/10 px-1 rounded">~</code> terminal · ⌘K menu
           </span>
         </p>
       </footer>
