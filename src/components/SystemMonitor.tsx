@@ -77,8 +77,10 @@ export const SystemMonitor = () => {
   const [cpuLoad, setCpuLoad] = useState(12);
   const [memUsage, setMemUsage] = useState({ used: 0.45, limit: 4.0 });
   const [cpuCores, setCpuCores] = useState(4);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
+    setIsMounted(true);
     const timer = setInterval(() => setTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -270,7 +272,7 @@ export const SystemMonitor = () => {
              </div>
              <div className="px-3 bg-[#7aa2f7] h-full flex items-center gap-2 text-black font-bold">
                 <Clock size={12} />
-                <span>{time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                <span>{isMounted ? time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--'}</span>
              </div>
         </div>
       </div>

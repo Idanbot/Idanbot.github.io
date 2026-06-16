@@ -535,6 +535,30 @@
       filter: none;
     }
   }
+
+  @keyframes blob-orbit-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(40px, 12px) scale(1.25); }
+  }
+  @keyframes blob-orbit-2 {
+    0%, 100% { transform: translate(0, 0) scale(1.2); }
+    50% { transform: translate(-40px, -12px) scale(0.9); }
+  }
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .animate-blob-orbit-1 {
+    animation: blob-orbit-1 12s ease-in-out infinite;
+  }
+  .animate-blob-orbit-2 {
+    animation: blob-orbit-2 15s ease-in-out infinite;
+  }
+  .animate-gradient-shift {
+    background-size: 200% 200%;
+    animation: gradient-shift 6s linear infinite;
+  }
 }
 
 

@@ -88,27 +88,8 @@ async function fetchWithRetry(url: string, options?: RequestInit, retries = 3, d
 }
 
 export const DeviceStatus = () => {
-  const [devices, setDevices] = useState<Device[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('device-heartbeats');
-        return cached ? JSON.parse(cached) : [];
-      } catch {
-        return [];
-      }
-    }
-    return [];
-  });
-  const [loading, setLoading] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        return !localStorage.getItem('device-heartbeats');
-      } catch {
-        return true;
-      }
-    }
-    return true;
-  });
+  const [devices, setDevices] = useState<Device[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
 
@@ -153,7 +134,17 @@ export const DeviceStatus = () => {
   }, []);
 
   useEffect(() => {
-    const hasCache = typeof window !== 'undefined' && !!localStorage.getItem('device-heartbeats');
+    let hasCache = false;
+    try {
+      const cached = localStorage.getItem('device-heartbeats');
+      if (cached) {
+        setDevices(JSON.parse(cached));
+        setLoading(false);
+        hasCache = true;
+      }
+    } catch (e) {
+      console.warn('Failed to load cached device heartbeats:', e);
+    }
     fetchDevices(hasCache);
   }, [fetchDevices]);
 

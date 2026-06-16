@@ -67,7 +67,10 @@ export const CommandPalette = ({ startOpen = false }: { startOpen?: boolean }) =
         <Command.Group heading="Navigation" className="mb-2 px-2 text-xs font-medium text-gray-500">
           <Command.Item
             onSelect={() =>
-              runCommand(() => window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT)))
+              runCommand(() => {
+                delete window.__pendingTerminalCommand;
+                window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT));
+              })
             }
             className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
           >
@@ -104,6 +107,45 @@ export const CommandPalette = ({ startOpen = false }: { startOpen?: boolean }) =
           >
             <Activity size={16} />
             <span>Go to Site info</span>
+          </Command.Item>
+        </Command.Group>
+
+        <Command.Group heading="Terminal Shortcuts" className="mb-2 px-2 text-xs font-medium text-gray-500">
+          <Command.Item
+            onSelect={() =>
+              runCommand(() => {
+                window.__pendingTerminalCommand = 'neofetch';
+                window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT));
+              })
+            }
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            <Terminal size={16} />
+            <span>Run 'neofetch'</span>
+          </Command.Item>
+          <Command.Item
+            onSelect={() =>
+              runCommand(() => {
+                window.__pendingTerminalCommand = 'joke';
+                window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT));
+              })
+            }
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            <Terminal size={16} />
+            <span>Run 'joke'</span>
+          </Command.Item>
+          <Command.Item
+            onSelect={() =>
+              runCommand(() => {
+                window.__pendingTerminalCommand = 'skills';
+                window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT));
+              })
+            }
+            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+          >
+            <Terminal size={16} />
+            <span>Run 'skills'</span>
           </Command.Item>
         </Command.Group>
 
