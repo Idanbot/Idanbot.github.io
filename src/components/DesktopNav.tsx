@@ -35,10 +35,12 @@ export function DesktopNav({ activeSection }: { activeSection: string }) {
       aria-label="Primary navigation"
       onKeyDown={handleKeyDown}
     >
+
       {/* Dynamic background liquid blobs */}
-      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none rounded-full opacity-40">
-        <div className="absolute top-[-80%] left-[-20%] size-36 rounded-full bg-cloud/30 blur-2xl animate-blob-orbit-1" />
-        <div className="absolute bottom-[-80%] right-[-20%] size-36 rounded-full bg-platform/20 blur-2xl animate-blob-orbit-2" />
+      <div className="absolute inset-0 -z-10 overflow-hidden pointer-events-none rounded-full opacity-45 mix-blend-screen">
+        <div className="absolute top-[-90%] left-[-20%] size-44 rounded-full bg-cloud/35 blur-3xl animate-blob-orbit-1" />
+        <div className="absolute bottom-[-90%] right-[-20%] size-44 rounded-full bg-platform/25 blur-3xl animate-blob-orbit-2" />
+        <div className="absolute top-[10%] left-[30%] size-40 rounded-full bg-backend/20 blur-3xl animate-blob-orbit-3" />
       </div>
 
       <ul className="relative z-[1] grid grid-cols-4 gap-1 text-sm font-medium text-white/60">
