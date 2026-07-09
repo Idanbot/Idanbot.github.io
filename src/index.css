@@ -198,19 +198,7 @@
   .cv-skills,
   .cv-history,
   .cv-monitor {
-    content-visibility: auto;
-  }
-
-  .cv-skills {
-    contain-intrinsic-size: auto 430px;
-  }
-
-  .cv-history {
-    contain-intrinsic-size: auto 820px;
-  }
-
-  .cv-monitor {
-    contain-intrinsic-size: auto 360px;
+    contain: paint;
   }
 
   .glass {
@@ -611,15 +599,9 @@
   }
 }
 
-@supports (animation-timeline: view()) {
-  .scroll-reveal {
-    opacity: 0;
-    transform: translate3d(0, 32px, 0);
-    animation: section-reveal linear both;
-    animation-timeline: view();
-    animation-range: entry 8% cover 34%;
-    will-change: opacity, transform;
-  }
+.scroll-reveal {
+  opacity: 1;
+  transform: none;
 }
 
 @media (prefers-reduced-motion: reduce) {

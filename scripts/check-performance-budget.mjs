@@ -19,18 +19,24 @@ const initialStyles = [...index.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="\
   (match) => match[1]
 );
 const fontDirectory = path.join(distDirectory, 'fonts');
-const fonts = (await readdir(fontDirectory)).map((file) => `fonts/${file}`);
+const fonts = (await readdir(fontDirectory)).map((file) => 'fonts/' + file);
+const assetDirectory = path.join(distDirectory, 'assets');
+const heroSceneAsset = (await readdir(assetDirectory)).find(
+  (file) => file.startsWith('three.') && file.endsWith('.js')
+);
 
 const uniqueJavaScript = [...new Set(initialJavaScript)];
 const initialJavaScriptBytes = await Promise.all(uniqueJavaScript.map(gzipSize));
 const styleBytes = await Promise.all(initialStyles.map(gzipSize));
 const fontBytes = await Promise.all(fonts.map(async (file) => (await readFile(path.join(distDirectory, file))).byteLength));
+const heroSceneJavaScript = heroSceneAsset ? await gzipSize('assets/' + heroSceneAsset) : 0;
 
 const measurements = {
   entryJavaScript: initialJavaScriptBytes[0] ?? 0,
   initialJavaScript: initialJavaScriptBytes.reduce((total, bytes) => total + bytes, 0),
   css: styleBytes.reduce((total, bytes) => total + bytes, 0),
   fonts: fontBytes.reduce((total, bytes) => total + bytes, 0),
+  heroSceneJavaScript,
 };
 
 const budgets = {
@@ -38,6 +44,7 @@ const budgets = {
   initialJavaScript: 76 * kibibyte,
   css: 18 * kibibyte,
   fonts: 90 * kibibyte,
+  heroSceneJavaScript: 200 * kibibyte,
 };
 
 const failures = Object.entries(budgets)

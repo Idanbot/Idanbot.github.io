@@ -96,7 +96,7 @@ export const StackSection = ({ className }: { className?: string }) => {
       aria-labelledby="skills-heading"
     >
       <m.div
-        initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 40 }}
+        initial={false}
         whileInView={{ opacity: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : undefined}
         viewport={{ once: true, margin: '-80px' }}
@@ -152,7 +152,7 @@ export const StackSection = ({ className }: { className?: string }) => {
             <m.li
               key={`${item.name}-${index}`}
               aria-hidden={!prefersReducedMotion && index >= stacks.length}
-              initial={prefersReducedMotion ? { opacity: 1, scale: 1 } : { opacity: 0, scale: 0.92 }}
+              initial={false}
               whileInView={{ opacity: 1, scale: 1 }}
               viewport={{ once: true, margin: '-40px' }}
               transition={
@@ -204,7 +204,7 @@ export const StackSection = ({ className }: { className?: string }) => {
       </div>
 
       <m.div
-        initial={prefersReducedMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 24 }}
+        initial={false}
         whileInView={{ opacity: 1, y: 0 }}
         transition={prefersReducedMotion ? { duration: 0 } : undefined}
         viewport={{ once: true, margin: '-60px' }}

@@ -1,6 +1,5 @@
 import { Terminal } from 'lucide-react';
 import { HeroBackground } from './HeroBackground';
-import { HeroTopology } from './HeroTopology';
 import { ScrambleText } from './ScrambleText';
 import { SocialDock } from './SocialDock';
 import { profile } from '@/data/profile';
@@ -21,8 +20,7 @@ export function HeroSection({
       id="hero"
       className="relative flex min-h-[100svh] min-h-[100dvh] snap-start flex-col items-start justify-center overflow-hidden px-5 py-16 sm:px-8 sm:py-24 lg:px-12"
     >
-      <HeroBackground />
-      {!prefersReducedMotion ? <HeroTopology quality={topologyQuality} /> : null}
+      <HeroBackground quality={topologyQuality} animate={!prefersReducedMotion} />
       <div className="relative z-10 w-full max-w-5xl space-y-5 px-1 text-left sm:space-y-8">
         <div
           className="liquid-glass-control inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium uppercase tracking-[0.16em] text-white/72"

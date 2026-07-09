@@ -55,7 +55,7 @@ export const GitHistory = () => {
         {commits.map((commit, index) => (
           <m.div
             key={commit.hash}
-            initial={prefersReducedMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -20 }}
+            initial={false}
             whileInView={{ opacity: 1, x: 0 }}
             transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.08 }}
             className="relative pl-6 sm:pl-8"

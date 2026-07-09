@@ -126,7 +126,7 @@ function App() {
         />
 
         <LazyOnVisible
-          id="skills"
+          targetId="skills"
           prefetch={preloadStack}
           prefetchRootMargin="440px 0px"
           renderRootMargin="220px 0px"

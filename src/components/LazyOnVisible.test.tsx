@@ -20,6 +20,8 @@ afterEach(() => {
   });
   container.remove();
   window.history.replaceState(null, '', '/');
+  vi.restoreAllMocks();
+  vi.unstubAllGlobals();
 });
 
 describe('LazyOnVisible', () => {
@@ -54,5 +56,51 @@ describe('LazyOnVisible', () => {
     });
 
     expect(container.textContent).toBe('loading');
+  });
+
+  it('reveals a nearby boundary when an observer never reports intersection', async () => {
+    let top = 4_000;
+    vi.spyOn(window, 'requestAnimationFrame').mockImplementation((callback) => {
+      callback(0);
+      return 1;
+    });
+    vi.stubGlobal(
+      'IntersectionObserver',
+      class {
+        observe() {}
+        disconnect() {}
+      }
+    );
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockImplementation(
+      () =>
+        ({
+          top,
+          bottom: top + 300,
+          left: 0,
+          right: 100,
+          width: 100,
+          height: 300,
+          x: 0,
+          y: top,
+          toJSON: () => ({}),
+        }) as DOMRect
+    );
+
+    await act(async () => {
+      root.render(
+        <LazyOnVisible fallback={<div>loading skills</div>} isServer={false}>
+          <div>skills loaded</div>
+        </LazyOnVisible>
+      );
+    });
+
+    expect(container.textContent).toContain('loading skills');
+
+    top = 100;
+    await act(async () => {
+      window.dispatchEvent(new Event('scroll'));
+    });
+
+    expect(container.textContent).toContain('skills loaded');
   });
 });
