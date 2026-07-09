@@ -23,127 +23,55 @@ function createThreeScene(
   renderer.setClearColor(0x000000, 0);
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 0.82;
+  renderer.toneMappingExposure = 1.0;
 
   const scene = new THREE.Scene();
-  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 50);
-  camera.position.set(0, 0, 9.2);
+  scene.fog = new THREE.FogExp2(0x000000, 0.05);
 
-  const network = new THREE.Group();
-  scene.add(network);
+  const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+  camera.position.set(0, 2, 10);
+  camera.lookAt(0, 0, 0);
 
-  const grid = new THREE.GridHelper(8, quality === 'full' ? 18 : 12, 0x3b82f6, 0x1d4f7a);
-  const gridMaterials = Array.isArray(grid.material) ? grid.material : [grid.material];
-  for (const material of gridMaterials) {
-    material.transparent = true;
-    material.opacity = quality === 'full' ? 0.2 : 0.14;
-    material.depthWrite = false;
+  const group = new THREE.Group();
+  scene.add(group);
+
+  // Terrain Grid
+  const gridWidth = 40;
+  const gridHeight = 40;
+  const segments = quality === 'full' ? 40 : 20;
+  const terrainGeo = new THREE.PlaneGeometry(gridWidth, gridHeight, segments, segments);
+  terrainGeo.rotateX(-Math.PI / 2);
+
+  const posAttr = terrainGeo.attributes.position as THREE.BufferAttribute;
+  for (let i = 0; i < posAttr.count; i++) {
+    const x = posAttr.getX(i);
+    const z = posAttr.getZ(i);
+    // Create some noisy terrain
+    const y = Math.sin(x * 0.5) * Math.cos(z * 0.5) * 1.5;
+    posAttr.setY(i, y);
   }
-  grid.position.set(0, -2.2, -1.4);
-  grid.rotation.set(Math.PI * 0.42, 0, -0.12);
-  network.add(grid);
+  terrainGeo.computeVertexNormals();
 
-  const frame = new THREE.LineSegments(
-    new THREE.EdgesGeometry(new THREE.BoxGeometry(4.8, 2.9, 1.35)),
-    new THREE.LineBasicMaterial({
-      color: 0x60a5fa,
-      transparent: true,
-      opacity: quality === 'full' ? 0.34 : 0.24,
-      depthWrite: false,
-    })
-  );
-  frame.rotation.set(0.24, 0.18, -0.08);
-  network.add(frame);
+  const terrainMat = new THREE.MeshBasicMaterial({
+    color: 0x3b82f6,
+    wireframe: true,
+    transparent: true,
+    opacity: 0.15,
+  });
+  const terrain = new THREE.Mesh(terrainGeo, terrainMat);
+  terrain.position.set(0, -3, -10);
+  group.add(terrain);
 
-  const routeMaterial = (color: number, opacity: number) =>
-    new THREE.LineDashedMaterial({
-      color,
-      transparent: true,
-      opacity,
-      dashSize: 0.12,
-      gapSize: 0.16,
-      scale: 1,
-      depthWrite: false,
-    });
-
-  const routeDefinitions = [
-    {
-      color: 0x60a5fa,
-      opacity: 0.82,
-      points: [
-        new THREE.Vector3(-2.5, -0.85, 0.35),
-        new THREE.Vector3(-1.1, 0.9, -0.15),
-        new THREE.Vector3(0.35, -0.35, 0.5),
-        new THREE.Vector3(2.45, 0.82, -0.28),
-      ],
-    },
-    {
-      color: 0x34d399,
-      opacity: 0.72,
-      points: [
-        new THREE.Vector3(-2.25, 0.9, -0.38),
-        new THREE.Vector3(-0.72, -0.48, 0.48),
-        new THREE.Vector3(0.92, 0.72, -0.12),
-        new THREE.Vector3(2.52, -0.66, 0.24),
-      ],
-    },
-    {
-      color: 0x7dd3fc,
-      opacity: 0.56,
-      points: [
-        new THREE.Vector3(-1.9, -1.24, -0.22),
-        new THREE.Vector3(-0.2, 0.08, 0.6),
-        new THREE.Vector3(1.4, -0.92, -0.12),
-        new THREE.Vector3(2.7, 0.18, 0.42),
-      ],
-    },
-  ];
-
-  const dashedMaterials: Three.LineDashedMaterial[] = [];
-  for (const definition of routeDefinitions.slice(0, quality === 'full' ? 3 : 2)) {
-    const geometry = new THREE.BufferGeometry().setFromPoints(
-      new THREE.CatmullRomCurve3(definition.points).getPoints(quality === 'full' ? 72 : 48)
-    );
-    const material = routeMaterial(definition.color, definition.opacity);
-    const line = new THREE.Line(geometry, material);
-    line.computeLineDistances();
-    dashedMaterials.push(material);
-    network.add(line);
-  }
-
-  const nodes = [
-    [-2.5, -0.85, 0.35],
-    [-2.25, 0.9, -0.38],
-    [-1.1, 0.9, -0.15],
-    [-0.72, -0.48, 0.48],
-    [-0.2, 0.08, 0.6],
-    [0.35, -0.35, 0.5],
-    [0.92, 0.72, -0.12],
-    [1.4, -0.92, -0.12],
-    [2.45, 0.82, -0.28],
-    [2.52, -0.66, 0.24],
-    [2.7, 0.18, 0.42],
-  ];
-  const nodeGeometry = new THREE.BufferGeometry();
-  nodeGeometry.setAttribute(
-    'position',
-    new THREE.Float32BufferAttribute(
-      nodes.slice(0, quality === 'full' ? nodes.length : 8).flat(),
-      3
-    )
-  );
-  const nodeCloud = new THREE.Points(
-    nodeGeometry,
-    new THREE.PointsMaterial({
-      color: 0xbfdbfe,
-      size: quality === 'full' ? 0.065 : 0.05,
-      transparent: true,
-      opacity: 0.9,
-      sizeAttenuation: true,
-      depthWrite: false,
-    })
-  );
-  network.add(nodeCloud);
+  // Nodes on terrain
+  const nodeMat = new THREE.PointsMaterial({
+    color: 0x60a5fa,
+    size: 0.1,
+    transparent: true,
+    opacity: 0.8
+  });
+  const nodes = new THREE.Points(terrainGeo, nodeMat);
+  nodes.position.copy(terrain.position);
+  group.add(nodes);
 
   let width = 1;
   let height = 1;
@@ -159,18 +87,18 @@ function createThreeScene(
 
   const setResponsiveLayout = () => {
     const compact = width < 768;
-    network.position.set(compact ? 0 : 2.1, compact ? -0.24 : 0.02, -0.15);
-    network.scale.setScalar(compact ? 0.72 : 1);
+    group.position.set(compact ? 0 : 0, compact ? 1 : 0, 0);
   };
 
   const render = () => {
-    network.rotation.x = currentPointerY * 0.08 + Math.sin(elapsed * 0.46) * 0.035;
-    network.rotation.y = 0.16 + currentPointerX * 0.16 + elapsed * 0.052;
-    network.rotation.z = Math.sin(elapsed * 0.34) * 0.032;
+    // Scroll terrain forward
+    terrain.position.z = -10 + (elapsed * 2) % (gridHeight / segments);
+    nodes.position.z = terrain.position.z;
 
-    dashedMaterials.forEach((material, index) => {
-      material.dashSize = 0.12 + Math.sin(elapsed * (0.9 + index * 0.15) + index) * 0.035;
-    });
+    // Parallax
+    camera.position.x += (currentPointerX * 3 - camera.position.x) * 0.05;
+    camera.position.y += (2 - currentPointerY * 2 - camera.position.y) * 0.05;
+    camera.lookAt(0, 0, 0);
 
     renderer.render(scene, camera);
   };
