@@ -54,6 +54,8 @@ const preloadStack = () => loadStackSection();
 const preloadHistory = () => loadGitHistory();
 const preloadStatus = () => loadStatusPage();
 
+import { LazyMotion, domAnimation } from 'framer-motion';
+
 function App() {
   const activeSection = useActiveSection();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -97,6 +99,7 @@ function App() {
   }, []);
 
   return (
+    <LazyMotion features={domAnimation}>
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-primary/25">
       <a href="#main-content" className="skip-link">
         Skip to main content
@@ -199,6 +202,7 @@ function App() {
         </p>
       </footer>
     </div>
+    </LazyMotion>
   );
 }
 

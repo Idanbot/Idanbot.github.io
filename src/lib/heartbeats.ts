@@ -36,7 +36,7 @@ function delay(milliseconds: number) {
 
 export async function fetchHeartbeatMachines({
   retries = 1,
-  timeoutMs = 6000,
+  timeoutMs = 15000,
 }: {
   retries?: number;
   timeoutMs?: number;

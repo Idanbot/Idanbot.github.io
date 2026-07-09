@@ -39,18 +39,9 @@ function createThreeScene(
   const gridWidth = 40;
   const gridHeight = 40;
   const segments = quality === 'full' ? 40 : 20;
+  const cellSize = gridHeight / segments;
   const terrainGeo = new THREE.PlaneGeometry(gridWidth, gridHeight, segments, segments);
   terrainGeo.rotateX(-Math.PI / 2);
-
-  const posAttr = terrainGeo.attributes.position as THREE.BufferAttribute;
-  for (let i = 0; i < posAttr.count; i++) {
-    const x = posAttr.getX(i);
-    const z = posAttr.getZ(i);
-    // Create some noisy terrain
-    const y = Math.sin(x * 0.5) * Math.cos(z * 0.5) * 1.5;
-    posAttr.setY(i, y);
-  }
-  terrainGeo.computeVertexNormals();
 
   const terrainMat = new THREE.MeshBasicMaterial({
     color: 0x3b82f6,
@@ -91,9 +82,24 @@ function createThreeScene(
   };
 
   const render = () => {
-    // Scroll terrain forward
-    terrain.position.z = -10 + (elapsed * 2) % (gridHeight / segments);
+    // Scroll terrain forward and loop by cell size for seamless grid motion
+    const scrollZ = (elapsed * 3) % cellSize;
+    terrain.position.z = -10 + scrollZ;
     nodes.position.z = terrain.position.z;
+
+    // Dynamically update vertex Y positions based on their absolute world Z position
+    // This makes the mountain noise stay locked in world space while the grid lines flow towards the camera
+    const posAttr = terrainGeo.attributes.position as THREE.BufferAttribute;
+    for (let i = 0; i < posAttr.count; i++) {
+      const x = posAttr.getX(i);
+      const localZ = posAttr.getZ(i);
+      const worldZ = localZ + terrain.position.z;
+      
+      // Calculate smooth noise for terrain
+      const y = Math.sin(x * 0.4) * Math.cos(worldZ * 0.4) * 1.5;
+      posAttr.setY(i, y);
+    }
+    posAttr.needsUpdate = true;
 
     // Parallax
     camera.position.x += (currentPointerX * 3 - camera.position.x) * 0.05;

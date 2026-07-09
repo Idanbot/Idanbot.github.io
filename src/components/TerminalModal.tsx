@@ -427,6 +427,10 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
         }
       } else {
         if (document.activeElement === lastEl) {
+          if (document.activeElement === inputRef.current) {
+            // Do not wrap focus; allow the input's onKeyDown to handle Tab for autocompletion.
+            return;
+          }
           firstEl.focus();
           e.preventDefault();
         }
