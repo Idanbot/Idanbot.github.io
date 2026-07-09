@@ -56,7 +56,7 @@ function createThreeScene(
   // Nodes on terrain
   const nodeMat = new THREE.PointsMaterial({
     color: 0x60a5fa,
-    size: 0.1,
+    size: 0.075,
     transparent: true,
     opacity: 0.8
   });
@@ -95,8 +95,12 @@ function createThreeScene(
       const localZ = posAttr.getZ(i);
       const worldZ = localZ + terrain.position.z;
       
-      // Calculate smooth noise for terrain
-      const y = Math.sin(x * 0.4) * Math.cos(worldZ * 0.4) * 1.5;
+      // Calculate smooth noise for terrain with stochastic morphing
+      const baseTerrain = Math.sin(x * 0.4) * Math.cos(worldZ * 0.4) * 1.5;
+      const dynamicWave = Math.sin(x * 0.3 + elapsed * 0.5) * Math.cos(worldZ * 0.2 - elapsed * 0.3) * 0.5;
+      const detail = Math.sin(x * 1.2 - elapsed * 0.8) * Math.cos(worldZ * 1.5 + elapsed * 0.4) * 0.15;
+      
+      const y = baseTerrain + dynamicWave + detail;
       posAttr.setY(i, y);
     }
     posAttr.needsUpdate = true;
