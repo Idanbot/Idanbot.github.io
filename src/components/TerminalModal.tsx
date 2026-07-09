@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { m, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { X, Terminal as TerminalIcon } from 'lucide-react';
 
@@ -79,88 +79,13 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
   /** Consecutive Tab presses for cycling when the line is already at the longest common prefix. */
   const tabCycleRef = useRef(0);
 
-  useEffect(() => {
-    const openFromChrome = () => setIsOpen(true);
-    window.addEventListener(OPEN_TERMINAL_EVENT, openFromChrome);
-    return () => window.removeEventListener(OPEN_TERMINAL_EVENT, openFromChrome);
-  }, []);
+  // Command history states
+  const [cmdHistory, setCmdHistory] = useState<string[]>([]);
+  const [historyIndex, setHistoryIndex] = useState(-1);
+  const [tempInput, setTempInput] = useState('');
 
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (showMonitor) {
-        setShowMonitor(false);
-        e.preventDefault(); // Prevent other actions when closing monitor
-        return;
-      }
-
-      if (e.key === '`' || e.key === '~') {
-        e.preventDefault();
-        setIsOpen(prev => !prev);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [showMonitor]);
-
-  const modalRef = useRef<HTMLDivElement>(null);
-  const previousFocusRef = useRef<HTMLElement | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      previousFocusRef.current = document.activeElement as HTMLElement;
-      if (inputRef.current && !showMonitor) {
-        inputRef.current.focus();
-      }
-    } else {
-      if (previousFocusRef.current) {
-        previousFocusRef.current.focus();
-        previousFocusRef.current = null;
-      }
-    }
-  }, [isOpen, showMonitor]);
-
-  useEffect(() => {
-    if (!isOpen || showMonitor) return;
-
-    const handleFocusTrap = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-      if (!modalRef.current) return;
-
-      const focusableEls = modalRef.current.querySelectorAll<HTMLElement>(
-        'a[href], button:not([disabled]), textarea, input, select'
-      );
-      if (focusableEls.length === 0) return;
-
-      const firstEl = focusableEls[0];
-      const lastEl = focusableEls[focusableEls.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === firstEl) {
-          lastEl.focus();
-          e.preventDefault();
-        }
-      } else {
-        if (document.activeElement === lastEl) {
-          firstEl.focus();
-          e.preventDefault();
-        }
-      }
-    };
-
-    window.addEventListener('keydown', handleFocusTrap);
-    return () => window.removeEventListener('keydown', handleFocusTrap);
-  }, [isOpen, showMonitor]);
-
-  useEffect(() => {
-    const smooth =
-      typeof window !== 'undefined' &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    bottomRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
-  }, [history]);
-
-  const handleCommand = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const trimmedInput = input.trim();
+  const executeCommand = useCallback(async (cmdText: string) => {
+    const trimmedInput = cmdText.trim();
     if (!trimmedInput) return;
 
     const parts = trimmedInput.split(' ');
@@ -168,7 +93,17 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
     const args = parts.slice(1);
     const argsString = args.join(' ');
 
-    setHistory(prev => [...prev, `> ${input}`]);
+    setHistory(prev => [...prev, `> ${trimmedInput}`]);
+
+    const saveToCommandHistory = () => {
+      setCmdHistory((previous) => {
+        const next = [...previous, trimmedInput];
+        if (next.length > 50) next.shift();
+        return next;
+      });
+      setHistoryIndex(-1);
+      setTempInput('');
+    };
 
     let response = '';
 
@@ -188,6 +123,7 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
           response = `heartbeat: ${requestError instanceof Error ? requestError.message : 'request failed'}`;
         }
         setHistory((previous) => [...previous, response]);
+        saveToCommandHistory();
         return;
       }
       case 'echo':
@@ -315,7 +251,7 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
         let memStr = '512MB / 4096MB (JS Heap)';
         const memory = typeof window !== 'undefined' ? (window.performance as PerformanceWithMemory).memory : undefined;
         if (memory) {
-          memStr = `${Math.round(memory.usedJSHeapSize / (1024 * 1024))}MB / ${Math.round(memory.jsHeapLimit / (1024 * 1024))}MB (JS Heap)`;
+          memStr = `${Math.round(memory.usedJSHeapSize / (1024 * 1024 * 1024) * 1024)}MB / ${Math.round(memory.jsHeapLimit / (1024 * 1024 * 1024) * 1024)}MB (JS Heap)`;
         }
 
         response = `
@@ -402,7 +338,111 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
 
     setHistory(prev => [...prev, response]);
     setInput('');
+    saveToCommandHistory();
+  }, []);
+
+  const handleCommand = (e: React.FormEvent) => {
+    e.preventDefault();
+    void executeCommand(input);
   };
+
+  useEffect(() => {
+    const openFromChrome = (e: Event) => {
+      const customEvent = e as CustomEvent<{ command?: string }>;
+      const command = customEvent.detail?.command ?? window.__pendingTerminalCommand;
+      setIsOpen(true);
+      if (command) {
+        delete window.__pendingTerminalCommand;
+        void executeCommand(command);
+      }
+    };
+    window.addEventListener(OPEN_TERMINAL_EVENT, openFromChrome);
+    return () => window.removeEventListener(OPEN_TERMINAL_EVENT, openFromChrome);
+  }, [executeCommand]);
+
+  // Check and execute pending global commands
+  useEffect(() => {
+    if (isOpen && !showMonitor) {
+      const pending = window.__pendingTerminalCommand;
+      if (pending) {
+        delete window.__pendingTerminalCommand;
+        void executeCommand(pending);
+      }
+    }
+  }, [isOpen, showMonitor, executeCommand]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (showMonitor) {
+        setShowMonitor(false);
+        e.preventDefault(); // Prevent other actions when closing monitor
+        return;
+      }
+
+      if (e.key === '`' || e.key === '~') {
+        e.preventDefault();
+        setIsOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [showMonitor]);
+
+  const modalRef = useRef<HTMLDivElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      previousFocusRef.current = document.activeElement as HTMLElement;
+      if (inputRef.current && !showMonitor) {
+        inputRef.current.focus();
+      }
+    } else {
+      if (previousFocusRef.current) {
+        previousFocusRef.current.focus();
+        previousFocusRef.current = null;
+      }
+    }
+  }, [isOpen, showMonitor]);
+
+  useEffect(() => {
+    if (!isOpen || showMonitor) return;
+
+    const handleFocusTrap = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      if (!modalRef.current) return;
+
+      const focusableEls = modalRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), textarea, input, select'
+      );
+      if (focusableEls.length === 0) return;
+
+      const firstEl = focusableEls[0];
+      const lastEl = focusableEls[focusableEls.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl) {
+          lastEl.focus();
+          e.preventDefault();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          firstEl.focus();
+          e.preventDefault();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleFocusTrap);
+    return () => window.removeEventListener('keydown', handleFocusTrap);
+  }, [isOpen, showMonitor]);
+
+  useEffect(() => {
+    const smooth =
+      typeof window !== 'undefined' &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    bottomRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
+  }, [history]);
 
   const applyTabCompletion = () => {
     const line = input;
@@ -463,13 +503,44 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
   };
 
   const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Tab') {
-      tabCycleRef.current = 0;
+    if (e.key === 'Tab') {
+      e.preventDefault();
+      if (!isOpen || showMonitor) return;
+      applyTabCompletion();
       return;
     }
-    e.preventDefault();
-    if (!isOpen || showMonitor) return;
-    applyTabCompletion();
+
+    tabCycleRef.current = 0;
+
+    if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (!isOpen || showMonitor || cmdHistory.length === 0) return;
+
+      let nextIdx: number;
+      if (historyIndex === -1) {
+        setTempInput(input);
+        nextIdx = cmdHistory.length - 1;
+      } else if (historyIndex > 0) {
+        nextIdx = historyIndex - 1;
+      } else {
+        return;
+      }
+
+      setHistoryIndex(nextIdx);
+      setInput(cmdHistory[nextIdx]);
+    } else if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (!isOpen || showMonitor || historyIndex === -1) return;
+
+      if (historyIndex === cmdHistory.length - 1) {
+        setHistoryIndex(-1);
+        setInput(tempInput);
+      } else {
+        const nextIdx = historyIndex + 1;
+        setHistoryIndex(nextIdx);
+        setInput(cmdHistory[nextIdx]);
+      }
+    }
   };
 
   return (
