@@ -22,8 +22,6 @@ export default defineConfig({
                 manualChunks: function (id) {
                     if (!id.includes('node_modules'))
                         return;
-                    if (id.includes('@tsparticles'))
-                        return 'tsparticles';
                     if (id.includes('framer-motion'))
                         return 'framer-motion';
                     if (id.includes('cmdk'))

@@ -29,7 +29,8 @@ describe('SectionSkeleton', () => {
     const skeleton = container.firstElementChild;
     expect(skeleton?.className).toContain('min-h-[680px]');
     expect(skeleton?.className).toContain('md:min-h-[760px]');
-    expect(skeleton?.className).toContain('animate-pulse');
+    expect(skeleton?.getAttribute('aria-busy')).toBe('true');
+    expect(skeleton?.textContent).toContain('Heartbeat data is ready to load.');
   });
 
   it('uses the skills sizing for the skills lazy section', () => {
@@ -39,5 +40,6 @@ describe('SectionSkeleton', () => {
 
     expect(container.firstElementChild?.className).toContain('cv-skills');
     expect(container.firstElementChild?.className).toContain('min-h-[300px]');
+    expect(container.textContent).toContain('Cloud platforms, delivery, and observability.');
   });
 });

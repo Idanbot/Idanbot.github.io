@@ -1,4 +1,3 @@
-import { m } from 'framer-motion';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { profile } from '@/data/profile';
 
@@ -19,14 +18,14 @@ export function SocialDock() {
 
 function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode; label: string }) {
   const isMail = href.startsWith('mailto:');
-  const reduced = usePrefersReducedMotion();
+  const reducedMotion = usePrefersReducedMotion();
   return (
-    <m.a
+    <a
       href={href}
       {...(isMail ? {} : { target: '_blank', rel: 'noopener noreferrer' })}
-      whileHover={reduced ? undefined : { scale: 1.05 }}
-      whileTap={reduced ? undefined : { scale: 0.97 }}
-      className="icon-link group relative z-[1] inline-flex h-11 w-11 items-center justify-center rounded-full border border-transparent bg-white/[0.035] p-2.5 text-white/58 shadow-sm outline-none backdrop-blur-md transition-[border-color,background-color,color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-[0.025rem] hover:border-white/16 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_14px_44px_-26px_rgba(255,255,255,0.72)] focus-visible:ring-2 focus-visible:ring-cloud/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-12 sm:w-12 sm:p-3"
+      className={`icon-link group relative z-[1] inline-flex h-11 w-11 items-center justify-center rounded-full border border-transparent bg-white/[0.035] p-2.5 text-white/58 shadow-sm outline-none backdrop-blur-md transition-[border-color,background-color,color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] hover:border-white/16 hover:bg-white/[0.08] hover:text-white hover:shadow-[0_14px_44px_-26px_rgba(255,255,255,0.72)] focus-visible:ring-2 focus-visible:ring-cloud/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-12 sm:w-12 sm:p-3 ${
+        reducedMotion ? '' : 'hover:-translate-y-[0.025rem] active:scale-[0.97]'
+      }`}
       aria-label={label}
     >
       <span className="pointer-events-none absolute bottom-[calc(100%+0.65rem)] left-1/2 -translate-x-1/2 translate-y-1 rounded-full border border-white/10 bg-black/80 px-2.5 py-1 text-xs font-medium text-white/78 opacity-0 shadow-[0_12px_36px_-24px_rgba(255,255,255,0.8)] backdrop-blur-md transition-[opacity,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
@@ -35,7 +34,7 @@ function SocialLink({ href, icon, label }: { href: string; icon: React.ReactNode
       <span className="flex shrink-0 items-center justify-center transition-colors duration-100 group-hover:text-white group-focus-visible:text-white">
         {icon}
       </span>
-    </m.a>
+    </a>
   );
 }
 

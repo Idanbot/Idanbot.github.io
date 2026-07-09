@@ -15,8 +15,17 @@ npm run dev
 npm run lint
 npm run test
 npm run build
+npm run performance:check
 npm run preview
 ```
+
+`performance:check` validates the built GitHub Pages payload: initial JavaScript, CSS, local fonts,
+and accidental preloads of the retired animation runtimes.
+
+## Terminal
+
+Press `~` to open the terminal. The `heartbeat` command prints `machine: status` rows from the
+live heartbeat endpoint; use `heartbeat -json` to inspect the raw response payload.
 
 Continuous integration runs on every push and pull request via [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (**lint**, **test**, **build**).
 

@@ -1,5 +1,21 @@
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('/fonts/inter-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 400 800;
+  font-display: swap;
+  src: url('/fonts/outfit-latin.woff2') format('woff2');
+}
+
 @theme {
   --font-sans: Inter, ui-sans-serif, system-ui, sans-serif;
   --font-display: Outfit, Inter, ui-sans-serif, system-ui, sans-serif;
@@ -275,15 +291,6 @@
 
   .font-display {
     font-family: var(--font-display);
-  }
-
-  .noise-overlay {
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    z-index: 55;
-    opacity: 0.028;
-    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 220 220' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.85'/%3E%3C/svg%3E");
   }
 
   .premium-card {
@@ -578,73 +585,5 @@
     transform: none;
     animation: none;
     will-change: auto;
-  }
-}
-
-/* Hero-only motion (respects reduced motion via media query) */
-@keyframes hero-aurora-rotate {
-  0% {
-    transform: rotate(0deg) scale(1);
-  }
-  50% {
-    transform: rotate(200deg) scale(1.06);
-  }
-  100% {
-    transform: rotate(360deg) scale(1);
-  }
-}
-
-@keyframes hero-pulse-glow {
-  0%,
-  100% {
-    opacity: 0.45;
-    transform: translate(-50%, -35%) scale(1);
-  }
-  50% {
-    opacity: 0.85;
-    transform: translate(-50%, -38%) scale(1.06);
-  }
-}
-
-@keyframes hero-grid-drift {
-  0% {
-    background-position:
-      0 0,
-      0 0;
-  }
-  100% {
-    background-position:
-      48px 48px,
-      -48px 48px;
-  }
-}
-
-.hero-aurora {
-  background: conic-gradient(
-    from 220deg at 48% 42%,
-    rgba(59, 130, 246, 0.18),
-    rgba(16, 185, 129, 0.08),
-    rgba(255, 255, 255, 0.026),
-    transparent 54%,
-    transparent
-  );
-  filter: blur(48px);
-  transform-origin: 50% 45%;
-  animation: hero-aurora-rotate 34s linear infinite;
-}
-
-.hero-pulse-glow {
-  animation: hero-pulse-glow 9s ease-in-out infinite;
-}
-
-.hero-grid-shift {
-  animation: hero-grid-drift 42s linear infinite;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-aurora,
-  .hero-pulse-glow,
-  .hero-grid-shift {
-    animation: none !important;
   }
 }

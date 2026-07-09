@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useReducedMotion } from 'framer-motion';
+import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 
 interface ScrambleTextProps {
   text: string;
@@ -19,7 +19,7 @@ export const ScrambleText = ({
   const [displayText, setDisplayText] = useState(text);
   const [isScrambling, setIsScrambling] = useState(false);
   const intervalRef = useRef<number | null>(null);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = usePrefersReducedMotion();
 
   const scramble = () => {
     if (reduceMotion) {
@@ -65,11 +65,10 @@ export const ScrambleText = ({
       setDisplayText(text);
       return;
     }
-    scramble();
     return () => {
       if (intervalRef.current != null) clearInterval(intervalRef.current);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps -- scramble only tracks text/interval above
+  // Initial text remains stable for SSR and first paint; scrambling is hover-only.
   }, [text, interval, reduceMotion]);
 
   return (

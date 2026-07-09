@@ -12,6 +12,7 @@ interface PerformanceWithMemory extends Performance {
 import { SystemMonitor } from './SystemMonitor';
 import { OPEN_TERMINAL_EVENT } from '@/lib/site-events';
 import { profile } from '@/data/profile';
+import { fetchHeartbeatMachines, formatHeartbeatSummary } from '@/lib/heartbeats';
 
 const TERMINAL_COMMANDS = [
   'about',
@@ -22,6 +23,7 @@ const TERMINAL_COMMANDS = [
   'date',
   'echo',
   'exit',
+  'heartbeat',
   'help',
   'htop',
   'joke',
@@ -156,7 +158,7 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
     bottomRef.current?.scrollIntoView({ behavior: smooth ? 'smooth' : 'auto' });
   }, [history]);
 
-  const handleCommand = (e: React.FormEvent) => {
+  const handleCommand = async (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedInput = input.trim();
     if (!trimmedInput) return;
@@ -172,8 +174,22 @@ export const TerminalModal = ({ startOpen = false }: { startOpen?: boolean }) =>
 
     switch (cmd) {
       case 'help':
-        response = `Available commands: ${TERMINAL_COMMANDS.join(', ')}\nTip: press Tab to complete commands and \`cat\` filenames.`;
+        response = `Available commands: ${TERMINAL_COMMANDS.join(', ')}\nTip: press Tab to complete commands and \`cat\` filenames. Run \`heartbeat -json\` for the raw heartbeat endpoint response.`;
         break;
+      case 'heartbeat': {
+        setInput('');
+        setHistory((previous) => [...previous, 'Fetching heartbeat machines...']);
+        try {
+          const machines = await fetchHeartbeatMachines({ retries: 0 });
+          response = args.includes('-json')
+            ? JSON.stringify(machines, null, 2)
+            : formatHeartbeatSummary(machines);
+        } catch (requestError) {
+          response = `heartbeat: ${requestError instanceof Error ? requestError.message : 'request failed'}`;
+        }
+        setHistory((previous) => [...previous, response]);
+        return;
+      }
       case 'echo':
         response = argsString;
         break;

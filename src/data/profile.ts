@@ -9,6 +9,7 @@ export const profile = {
     description:
       'with backend depth, building secure, cost-aware cloud platforms and reliable production systems.',
   },
+  signals: ['Google Cloud Professional Cloud Architect', 'GCP & AWS', 'Kubernetes & Terraform'],
   socials: [
     { label: 'GitHub', href: 'https://github.com/Idanbot', kind: 'github' },
     { label: 'LinkedIn', href: 'https://www.linkedin.com/in/idanbotbol/', kind: 'linkedin' },

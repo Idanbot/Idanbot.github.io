@@ -1,5 +1,5 @@
 import React, { Suspense, useEffect, useState } from 'react';
-import { TracingBeams } from './components/TracingBeams';
+import { Mail } from 'lucide-react';
 import { DesktopNav } from './components/DesktopNav';
 import { HeroSection } from './components/HeroSection';
 import { LazyOnVisible } from './components/LazyOnVisible';
@@ -17,8 +17,6 @@ const loadTerminalModal = () =>
   import('./components/TerminalModal').then((mod) => ({ default: mod.TerminalModal }));
 const loadCommandPalette = () =>
   import('./components/CommandPalette').then((mod) => ({ default: mod.CommandPalette }));
-const loadParticleNetwork = () =>
-  import('./components/ParticleNetwork').then((mod) => ({ default: mod.ParticleNetwork }));
 const loadStackSection = () =>
   import('./components/StackSection').then((mod) => ({ default: mod.StackSection }));
 const loadGitHistory = () =>
@@ -28,7 +26,6 @@ const loadStatusPage = () =>
 
 const TerminalModal = React.lazy(loadTerminalModal);
 const CommandPalette = React.lazy(loadCommandPalette);
-const ParticleNetwork = React.lazy(loadParticleNetwork);
 const StackSection = React.lazy(loadStackSection);
 const GitHistory = React.lazy(loadGitHistory);
 const StatusPage = React.lazy(loadStatusPage);
@@ -41,18 +38,6 @@ const isConstrainedDevice = () => {
       (typeof nav.hardwareConcurrency === 'number' && nav.hardwareConcurrency <= 4) ||
       (typeof nav.deviceMemory === 'number' && nav.deviceMemory <= 4)
   );
-};
-
-const prefetchWhenIdle = (loader: () => Promise<unknown>) => {
-  if (typeof window === 'undefined') return;
-  const start = () => {
-    void loader();
-  };
-  if ('requestIdleCallback' in window) {
-    window.requestIdleCallback(start, { timeout: 2200 });
-    return;
-  }
-  globalThis.setTimeout(start, 1400);
 };
 
 const prefetchOnFirstIntent = (event: PointerEvent | FocusEvent, loader: () => Promise<unknown>) => {
@@ -75,7 +60,6 @@ function App() {
   const isServer = typeof window === 'undefined';
   const [terminalRequested, setTerminalRequested] = useState(false);
   const [commandPaletteRequested, setCommandPaletteRequested] = useState(false);
-  const [particlesReady, setParticlesReady] = useState(false);
   const [constrainedDevice, setConstrainedDevice] = useState(false);
   const requestTerminal = () => {
     if (terminalRequested) {
@@ -110,43 +94,13 @@ function App() {
   useEffect(() => {
     const constrained = isConstrainedDevice();
     setConstrainedDevice(constrained);
-    if (!constrained) {
-      prefetchWhenIdle(loadStackSection);
-    }
   }, []);
-
-  useEffect(() => {
-    if (prefersReducedMotion || constrainedDevice) return;
-
-    const start = () => setParticlesReady(true);
-    const idleId =
-      'requestIdleCallback' in window
-        ? window.requestIdleCallback(start, { timeout: 1400 })
-        : undefined;
-    const timeoutId = idleId === undefined ? window.setTimeout(start, 900) : undefined;
-
-    return () => {
-      if (idleId !== undefined && 'cancelIdleCallback' in window) {
-        window.cancelIdleCallback(idleId);
-      }
-      if (timeoutId !== undefined) {
-        window.clearTimeout(timeoutId);
-      }
-    };
-  }, [constrainedDevice, prefersReducedMotion]);
-
-  const particleLayer = particlesReady ? (
-    <Suspense fallback={null}>
-      <ParticleNetwork quality={constrainedDevice ? 'reduced' : 'full'} />
-    </Suspense>
-  ) : null;
 
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-primary/25">
       <a href="#main-content" className="skip-link">
         Skip to main content
       </a>
-      <div className="noise-overlay" aria-hidden />
       <DesktopNav activeSection={activeSection} />
       {terminalRequested ? (
         <Suspense fallback={null}>
@@ -159,16 +113,14 @@ function App() {
         </Suspense>
       ) : null}
 
-      <TracingBeams />
-
       <main
         id="main-content"
         tabIndex={-1}
         className="relative w-full scroll-smooth snap-y snap-proximity outline-none md:snap-mandatory"
       >
         <HeroSection
-          particleLayer={particleLayer}
           prefersReducedMotion={prefersReducedMotion}
+          topologyQuality={constrainedDevice ? 'reduced' : 'full'}
           onTerminalPreload={preloadTerminal}
           onTerminalRequest={requestTerminal}
         />
@@ -176,8 +128,8 @@ function App() {
         <LazyOnVisible
           id="skills"
           prefetch={preloadStack}
-          prefetchRootMargin="900px 0px"
-          renderRootMargin="260px 0px"
+          prefetchRootMargin="440px 0px"
+          renderRootMargin="220px 0px"
           fallback={<SectionSkeleton variant="skills" />}
           isServer={isServer}
         >
@@ -197,8 +149,8 @@ function App() {
           </div>
           <LazyOnVisible
             prefetch={preloadHistory}
-            prefetchRootMargin="900px 0px"
-            renderRootMargin="420px 0px"
+            prefetchRootMargin="480px 0px"
+            renderRootMargin="240px 0px"
             targetId="history"
             fallback={<SectionSkeleton variant="history" />}
             isServer={isServer}
@@ -212,8 +164,8 @@ function App() {
         <section id="monitor" className="cv-monitor min-h-[760px] scroll-mt-24 snap-start md:min-h-[840px]">
           <LazyOnVisible
             prefetch={preloadStatus}
-            prefetchRootMargin="900px 0px"
-            renderRootMargin="420px 0px"
+            prefetchRootMargin="480px 0px"
+            renderRootMargin="240px 0px"
             targetId="monitor"
             fallback={<SectionSkeleton variant="monitor" />}
             isServer={isServer}
@@ -226,6 +178,13 @@ function App() {
       </main>
 
       <footer className="relative z-[60] border-t border-white/5 bg-black/50 py-8 text-center backdrop-blur-md sm:py-12">
+        <a
+          href="mailto:idan@idanbot.uk"
+          className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-4 py-2.5 text-sm font-medium text-white/82 transition-colors hover:border-cloud/35 hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-cloud/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        >
+          <Mail className="size-4 text-cloud" aria-hidden />
+          Start a conversation
+        </a>
         <p className="mx-auto max-w-2xl px-4 text-sm text-muted-foreground md:text-base">
           © {new Date().getFullYear()} Idan Botbol.
           <span className="hidden md:inline">

@@ -1,46 +1,28 @@
-import { useState, useEffect, useCallback } from 'react';
-import { m, Variants } from 'framer-motion';
-import { Server, Cpu, RefreshCw, AlertCircle, Clock, Radio } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { m, type Variants } from 'framer-motion';
+import { AlertCircle, Clock, Cpu, Radio, RefreshCw, Server } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
+import {
+  fetchHeartbeatMachines,
+  getHeartbeatStatus,
+  isHeartbeatCacheFresh,
+  readHeartbeatCache,
+  sortHeartbeatMachines,
+  writeHeartbeatCache,
+  type HeartbeatMachine,
+  type HeartbeatStatus,
+} from '@/lib/heartbeats';
 
-interface Device {
-  id: string;
-  name: string;
-  heartbeat: number;
-  last_timestamp: string;
-  last_healthy_timestamp?: string | null;
-  unavailable_since_timestamp?: string | null;
-  alert_sent_at?: string | null;
-}
-
-const HEARTBEAT_ENDPOINT = 'https://device-heartbeat-monitor.botbolidan.workers.dev/';
-
-type DeviceStatusType = 'online' | 'stale' | 'offline';
-
-function getRelativeTime(timestampStr: string): string {
-  try {
-    const past = new Date(timestampStr).getTime();
-    if (isNaN(past)) return 'unknown';
-    const now = Date.now();
-    const diffMs = now - past;
-    const diffSecs = Math.floor(diffMs / 1000);
-    
-    if (diffSecs < 0) return 'just now';
-    if (diffSecs < 10) return 'just now';
-    if (diffSecs < 60) return `${diffSecs}s ago`;
-    
-    const diffMins = Math.floor(diffSecs / 60);
-    if (diffMins < 60) return `${diffMins}m ago`;
-    
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    
-    const diffDays = Math.floor(diffHours / 24);
-    return `${diffDays}d ago`;
-  } catch {
-    return 'unknown';
-  }
+function getRelativeTime(timestamp: string | number): string {
+  const past = new Date(timestamp).getTime();
+  if (Number.isNaN(past)) return 'unknown';
+  const difference = Date.now() - past;
+  if (difference < 10_000) return 'just now';
+  if (difference < 60_000) return `${Math.floor(difference / 1000)}s ago`;
+  if (difference < 3_600_000) return `${Math.floor(difference / 60_000)}m ago`;
+  if (difference < 86_400_000) return `${Math.floor(difference / 3_600_000)}h ago`;
+  return `${Math.floor(difference / 86_400_000)}d ago`;
 }
 
 function formatTimestamp(timestamp?: string | null): string {
@@ -55,97 +37,47 @@ function formatTimestamp(timestamp?: string | null): string {
   })}`;
 }
 
-function getDeviceStatus(device: Device): DeviceStatusType {
-  if (device.heartbeat !== 1) return 'offline';
-  
-  try {
-    const past = new Date(device.last_timestamp).getTime();
-    if (isNaN(past)) return 'offline';
-    const now = Date.now();
-    const diffMs = now - past;
-    // If last heartbeat was more than 10 minutes (600,000ms) ago, consider it stale
-    if (diffMs > 600000) {
-      return 'stale';
-    }
-    return 'online';
-  } catch {
-    return 'offline';
-  }
-}
-
-async function fetchWithRetry(url: string, options?: RequestInit, retries = 3, delay = 1000): Promise<Response> {
-  try {
-    const response = await fetch(url, options);
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-    return response;
-  } catch (error) {
-    if (retries <= 0) throw error;
-    await new Promise((resolve) => setTimeout(resolve, delay));
-    return fetchWithRetry(url, options, retries - 1, delay * 2);
-  }
+function getCachedHeartbeats() {
+  return typeof window === 'undefined' ? null : readHeartbeatCache();
 }
 
 export const DeviceStatus = () => {
-  const [devices, setDevices] = useState<Device[]>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const cached = localStorage.getItem('device-heartbeats');
-        return cached ? JSON.parse(cached) : [];
-      } catch {
-        return [];
-      }
-    }
-    return [];
+  const [devices, setDevices] = useState<HeartbeatMachine[]>(() => {
+    const cache = getCachedHeartbeats();
+    return cache ? sortHeartbeatMachines(cache.machines) : [];
   });
-  const [loading, setLoading] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        return !localStorage.getItem('device-heartbeats');
-      } catch {
-        return true;
-      }
-    }
-    return true;
-  });
+  const [cacheTimestamp, setCacheTimestamp] = useState<number | null>(
+    () => getCachedHeartbeats()?.savedAt ?? null
+  );
+  const [source, setSource] = useState<'live' | 'cache'>(() =>
+    getCachedHeartbeats() ? 'cache' : 'live'
+  );
+  const [loading, setLoading] = useState(() => !getCachedHeartbeats());
   const [error, setError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const fetchDevices = useCallback(async (silent = false) => {
-    if (!silent) {
-      setLoading(true);
-    } else {
-      setIsRefreshing(true);
-    }
+  const fetchDevices = useCallback(async (background = false) => {
+    if (background) setIsRefreshing(true);
+    else setLoading(true);
     setError(null);
 
     try {
-      const response = await fetchWithRetry(HEARTBEAT_ENDPOINT);
-      const data: Device[] = await response.json();
-      
-      // Sort devices: online first, then stale, then offline; then alphabetically by name
-      const sortedData = [...data].sort((a, b) => {
-        const statusA = getDeviceStatus(a);
-        const statusB = getDeviceStatus(b);
-        const rank = { online: 0, stale: 1, offline: 2 };
-        
-        if (rank[statusA] !== rank[statusB]) {
-          return rank[statusA] - rank[statusB];
-        }
-        return a.name.localeCompare(b.name);
-      });
-
-      setDevices(sortedData);
+      const machines = sortHeartbeatMachines(await fetchHeartbeatMachines());
+      setDevices(machines);
+      setSource('live');
+      const savedAt = Date.now();
+      setCacheTimestamp(savedAt);
       try {
-        localStorage.setItem('device-heartbeats', JSON.stringify(sortedData));
-      } catch (e) {
-        console.warn('Failed to cache device heartbeats to localStorage:', e);
+        writeHeartbeatCache(machines);
+      } catch {
+        // A private browsing quota failure should not prevent status rendering.
       }
-    } catch (err) {
-      console.error(err);
-      const errorMessage = err instanceof Error ? err.message : 'An error occurred while connecting to the heartbeat monitor.';
-      setError(errorMessage);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Unable to connect to the heartbeat monitor.'
+      );
     } finally {
       setLoading(false);
       setIsRefreshing(false);
@@ -153,240 +85,187 @@ export const DeviceStatus = () => {
   }, []);
 
   useEffect(() => {
-    const hasCache = typeof window !== 'undefined' && !!localStorage.getItem('device-heartbeats');
-    fetchDevices(hasCache);
+    const cache = getCachedHeartbeats();
+    if (cache) {
+      setDevices(sortHeartbeatMachines(cache.machines));
+      setCacheTimestamp(cache.savedAt);
+      setSource('cache');
+      setLoading(false);
+      if (isHeartbeatCacheFresh(cache)) return;
+      void fetchDevices(true);
+      return;
+    }
+    void fetchDevices();
   }, [fetchDevices]);
 
-  // Overall system health status
-  const systemStatus = useCallback(() => {
+  const systemStatus = useMemo<HeartbeatStatus | 'unknown'>(() => {
     if (devices.length === 0) return 'unknown';
-    const statuses = devices.map(getDeviceStatus);
-    if (statuses.every(s => s === 'online')) return 'healthy';
-    if (statuses.some(s => s === 'offline')) return 'degraded';
-    return 'warning';
+    const statuses = devices.map(getHeartbeatStatus);
+    if (statuses.every((status) => status === 'online')) return 'online';
+    if (statuses.some((status) => status === 'offline')) return 'offline';
+    return 'stale';
   }, [devices]);
 
-  const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.08,
-      },
-    },
-  };
+  const statusColors = {
+    online: 'bg-emerald-400',
+    stale: 'bg-amber-400',
+    offline: 'bg-red-400',
+    unknown: 'bg-zinc-400',
+  } as const;
 
   const cardVariants: Variants = {
-    hidden: { opacity: 0, y: 15 },
-    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 100, damping: 15 } },
+    hidden: { opacity: 0, y: 12 },
+    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 120, damping: 18 } },
   };
 
   return (
     <div className="w-full space-y-6">
-      {/* Section Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-white/5 pb-4">
+      <div className="flex flex-col gap-4 border-b border-white/5 pb-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="flex items-center gap-2">
-            <span className="relative flex h-2 w-2">
-              <span className={cn(
-                "animate-ping absolute inline-flex h-full w-full rounded-full opacity-75",
-                systemStatus() === 'healthy' && "bg-emerald-400",
-                systemStatus() === 'warning' && "bg-amber-400",
-                systemStatus() === 'degraded' && "bg-red-400",
-                systemStatus() === 'unknown' && "bg-zinc-400"
-              )}></span>
-              <span className={cn(
-                "relative inline-flex rounded-full h-2 w-2",
-                systemStatus() === 'healthy' && "bg-emerald-500",
-                systemStatus() === 'warning' && "bg-amber-500",
-                systemStatus() === 'degraded' && "bg-red-500",
-                systemStatus() === 'unknown' && "bg-zinc-500"
-              )}></span>
+            <span className="relative flex size-2">
+              <span
+                className={cn(
+                  'absolute inline-flex h-full w-full animate-ping rounded-full opacity-70',
+                  statusColors[systemStatus]
+                )}
+              />
+              <span className={cn('relative inline-flex size-2 rounded-full', statusColors[systemStatus])} />
             </span>
             <h3 className="font-mono text-xs uppercase tracking-[0.2em] text-muted-foreground">
-              Infrastructure Status
+              Infrastructure status
             </h3>
           </div>
-          <h2 className="text-xl font-bold text-white mt-1 sm:text-2xl">
-            Live Device Heartbeats
-          </h2>
-          {!loading && !error && devices.length > 0 ? (
+          <h2 className="mt-1 text-xl font-bold text-white sm:text-2xl">Live Device Heartbeats</h2>
+          {!loading && devices.length > 0 ? (
             <p className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
               <Radio size={12} className="text-cloud" aria-hidden />
-              <span>GET returned {devices.length} devices</span>
+              <span>{source === 'live' ? 'Live response' : `Cached ${getRelativeTime(cacheTimestamp ?? Date.now())}`}</span>
               <span aria-hidden>·</span>
-              <span>health, unavailable, and alert timestamps available</span>
+              <span>{devices.length} machines</span>
+              {isRefreshing ? <span className="text-cloud">refreshing</span> : null}
             </p>
           ) : null}
         </div>
 
         <button
-          onClick={() => fetchDevices(true)}
+          type="button"
+          onClick={() => void fetchDevices(true)}
           disabled={loading || isRefreshing}
-          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-1.5 text-xs font-mono text-muted-foreground hover:bg-white/[0.08] hover:text-white transition-all disabled:opacity-50 disabled:pointer-events-none active:scale-95"
+          className="inline-flex min-h-9 items-center justify-center gap-2 rounded-lg border border-white/10 bg-white/[0.03] px-3.5 py-1.5 font-mono text-xs text-muted-foreground transition-colors hover:bg-white/[0.08] hover:text-white disabled:pointer-events-none disabled:opacity-50"
         >
-          <RefreshCw size={12} className={cn("shrink-0", (loading || isRefreshing) && "animate-spin")} />
+          <RefreshCw size={12} className={cn('shrink-0', isRefreshing && 'animate-spin')} />
           <span>{isRefreshing ? 'REFRESHING...' : 'REFRESH'}</span>
         </button>
       </div>
 
-      {/* Main Content Area */}
+      {error && devices.length > 0 ? (
+        <p className="flex items-center gap-2 rounded-lg border border-amber-500/15 bg-amber-500/[0.04] px-3 py-2 text-xs text-amber-200/80">
+          <AlertCircle size={14} aria-hidden />
+          Showing cached heartbeat data. The latest refresh failed: {error}
+        </p>
+      ) : null}
+
       {loading ? (
-        /* Loading Skeletons */
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {[1, 2].map((i) => (
-            <Card key={i} className="border-white/5 bg-card/40 animate-pulse">
-              <CardContent className="p-5 flex items-center justify-between">
-                <div className="space-y-2.5 flex-1">
-                  <div className="h-4 bg-white/10 rounded w-1/3" />
-                  <div className="h-3 bg-white/5 rounded w-1/4" />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          {[1, 2].map((item) => (
+            <Card key={item} className="border-white/5 bg-card/40">
+              <CardContent className="flex items-center justify-between p-5">
+                <div className="space-y-2.5">
+                  <div className="h-4 w-28 rounded bg-white/10" />
+                  <div className="h-3 w-20 rounded bg-white/5" />
                 </div>
-                <div className="h-6 bg-white/10 rounded w-16" />
+                <div className="h-6 w-16 rounded bg-white/10" />
               </CardContent>
             </Card>
           ))}
         </div>
-      ) : error ? (
-        /* Error Alert */
-        <Card className="border-red-500/20 bg-red-500/[0.03] backdrop-blur-md">
-          <CardContent className="flex flex-col sm:flex-row items-center gap-4 p-6 text-center sm:text-left">
+      ) : error && devices.length === 0 ? (
+        <Card className="border-red-500/20 bg-red-500/[0.03]">
+          <CardContent className="flex flex-col items-center gap-4 p-6 text-center sm:flex-row sm:text-left">
             <div className="rounded-full bg-red-500/10 p-3 text-red-400">
               <AlertCircle size={24} />
             </div>
-            <div className="space-y-1 flex-1">
-              <h4 className="font-semibold text-white">Connection Error</h4>
+            <div className="flex-1 space-y-1">
+              <h4 className="font-semibold text-white">Connection error</h4>
               <p className="text-sm text-muted-foreground">{error}</p>
             </div>
             <button
-              onClick={() => fetchDevices()}
-              className="mt-3 sm:mt-0 inline-flex min-h-9 items-center justify-center rounded-lg bg-red-500/10 border border-red-500/20 px-4 py-2 text-xs font-semibold text-red-400 hover:bg-red-500/20 transition-all active:scale-95"
+              type="button"
+              onClick={() => void fetchDevices()}
+              className="inline-flex min-h-9 items-center justify-center rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-2 text-xs font-semibold text-red-300 transition-colors hover:bg-red-500/20"
             >
-              Retry Connection
+              Retry connection
             </button>
           </CardContent>
         </Card>
       ) : devices.length === 0 ? (
-        /* Empty State */
         <Card className="border-white/5 bg-card/20">
-          <CardContent className="flex flex-col items-center justify-center p-8 text-center space-y-3">
+          <CardContent className="flex flex-col items-center justify-center space-y-3 p-8 text-center">
             <div className="rounded-full bg-white/5 p-3 text-muted-foreground">
               <Server size={24} />
             </div>
             <div>
               <p className="text-sm font-semibold text-white">No monitored devices found</p>
-              <p className="text-xs text-muted-foreground mt-1">Add devices to your monitoring dashboard to track their status.</p>
+              <p className="mt-1 text-xs text-muted-foreground">The heartbeat endpoint returned no machines.</p>
             </div>
           </CardContent>
         </Card>
       ) : (
-        /* Device Status Cards */
         <m.div
-          variants={containerVariants}
+          variants={{ show: { transition: { staggerChildren: 0.06 } } }}
           initial="hidden"
           animate="show"
-          className="grid grid-cols-1 md:grid-cols-2 gap-4"
+          className="grid grid-cols-1 gap-4 md:grid-cols-2"
         >
           {devices.map((device) => {
-            const status = getDeviceStatus(device);
+            const status = getHeartbeatStatus(device);
             const isOnline = status === 'online';
             const isStale = status === 'stale';
-            const relativeTime = getRelativeTime(device.last_timestamp);
+            const statusAccent = isOnline
+              ? 'bg-emerald-500/80 shadow-[0_0_10px_#10b981]'
+              : isStale
+                ? 'bg-amber-500/80 shadow-[0_0_10px_#f59e0b]'
+                : 'bg-red-500/80 shadow-[0_0_10px_#ef4444]';
 
             return (
               <m.div key={device.id} variants={cardVariants}>
-                <Card className={cn(
-                  "group relative overflow-hidden transition-all duration-300 border-white/5 hover:border-white/10 bg-card/45 backdrop-blur-md hover:scale-[1.01] hover:shadow-lg",
-                  isOnline && "hover:shadow-emerald-500/[0.02]",
-                  isStale && "hover:shadow-amber-500/[0.02]",
-                  !isOnline && !isStale && "hover:shadow-red-500/[0.02]"
-                )}>
-                  {/* Glowing vertical indicator strip */}
-                  <div className={cn(
-                    "absolute left-0 top-0 bottom-0 w-[3px] transition-colors duration-300",
-                    isOnline && "bg-emerald-500/80 shadow-[0_0_10px_#10b981]",
-                    isStale && "bg-amber-500/80 shadow-[0_0_10px_#f59e0b]",
-                    !isOnline && !isStale && "bg-red-500/80 shadow-[0_0_10px_#ef4444]"
-                  )} />
-
-                  <CardContent className="p-5 flex items-center justify-between gap-4 pl-6">
-                    <div className="flex items-center gap-4">
-                      {/* Decorative Server Icon with background highlight */}
-                      <div className={cn(
-                        "p-2.5 rounded-lg border border-white/5 bg-white/[0.02] text-muted-foreground/70 transition-colors group-hover:text-white duration-300",
-                        isOnline && "group-hover:border-emerald-500/20 group-hover:bg-emerald-500/[0.02]",
-                        isStale && "group-hover:border-amber-500/20 group-hover:bg-amber-500/[0.02]",
-                        !isOnline && !isStale && "group-hover:border-red-500/20 group-hover:bg-red-500/[0.02]"
-                      )}>
-                        {device.name.includes('agent') ? <Cpu size={20} /> : <Server size={20} />}
+                <Card className="group relative overflow-hidden border-white/5 bg-card/45 transition-[border-color,box-shadow] duration-300 hover:border-white/10">
+                  <div className={`absolute inset-y-0 left-0 w-[3px] ${statusAccent}`} />
+                  <CardContent className="flex items-center justify-between gap-4 p-5 pl-6">
+                    <div className="flex min-w-0 items-center gap-4">
+                      <div className="rounded-lg border border-white/5 bg-white/[0.02] p-2.5 text-muted-foreground/70">
+                        {device.name.toLowerCase().includes('agent') ? <Cpu size={20} /> : <Server size={20} />}
                       </div>
-
-                      <div className="space-y-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <h4 className="font-semibold text-white text-sm sm:text-base truncate max-w-[150px] sm:max-w-[200px]">
+                      <div className="min-w-0 space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h4 className="max-w-[150px] truncate text-sm font-semibold text-white sm:max-w-[200px] sm:text-base">
                             {device.name}
                           </h4>
-                          <span className="font-mono text-[10px] text-muted-foreground bg-white/5 border border-white/10 px-1.5 py-0.5 rounded leading-none">
+                          <span className="rounded border border-white/10 bg-white/5 px-1.5 py-0.5 font-mono text-[10px] leading-none text-muted-foreground">
                             {device.id}
                           </span>
                         </div>
-                        
                         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                           <Clock size={11} className="shrink-0" />
-                          <span className="truncate" title={new Date(device.last_timestamp).toLocaleString()}>
-                            {isOnline ? `Pinged ${relativeTime}` : `Last active ${relativeTime}`}
+                          <span title={new Date(device.last_timestamp).toLocaleString()}>
+                            {isOnline ? `Pinged ${getRelativeTime(device.last_timestamp)}` : `Last active ${getRelativeTime(device.last_timestamp)}`}
                           </span>
                         </div>
                         <div className="grid gap-1 pt-1 text-[10px] leading-relaxed text-muted-foreground/80 sm:text-xs">
                           <span>Healthy: {formatTimestamp(device.last_healthy_timestamp ?? device.last_timestamp)}</span>
                           {device.unavailable_since_timestamp ? (
-                            <span className="text-amber-300/85">
-                              Unavailable since: {formatTimestamp(device.unavailable_since_timestamp)}
-                            </span>
+                            <span className="text-amber-300/85">Unavailable since: {formatTimestamp(device.unavailable_since_timestamp)}</span>
                           ) : null}
                           {device.alert_sent_at ? (
-                            <span className="text-red-300/85">
-                              Alert sent: {formatTimestamp(device.alert_sent_at)}
-                            </span>
+                            <span className="text-red-300/85">Alert sent: {formatTimestamp(device.alert_sent_at)}</span>
                           ) : null}
                         </div>
                       </div>
                     </div>
 
-                    {/* Status Pill Badge */}
-                    <div className="shrink-0">
-                      {isOnline ? (
-                        <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-mono font-bold text-emerald-400 border border-emerald-500/25">
-                          <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
-                          </span>
-                          <span>ACTIVE</span>
-                        </div>
-                      ) : isStale ? (
-                        <div className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/10 px-2.5 py-1 text-xs font-mono font-bold text-amber-400 border border-amber-500/25">
-                          <span className="relative flex h-1.5 w-1.5">
-                            <span className="animate-pulse absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                            <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-500"></span>
-                          </span>
-                          <span>STALE</span>
-                        </div>
-                      ) : (
-                        <div className="inline-flex items-center gap-1.5 rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-mono font-bold text-red-400 border border-red-500/25">
-                          <span className="h-1.5 w-1.5 rounded-full bg-red-500"></span>
-                          <span>OFFLINE</span>
-                        </div>
-                      )}
-                    </div>
+                    <StatusBadge status={status} />
                   </CardContent>
-
-                  {/* Watermark Icon in background */}
-                  <div className="absolute -bottom-4 -right-4 opacity-5 pointer-events-none group-hover:scale-110 transition-transform duration-500">
-                    {device.name.includes('agent') ? (
-                      <Cpu size={80} className="text-white" />
-                    ) : (
-                      <Server size={80} className="text-white" />
-                    )}
-                  </div>
                 </Card>
               </m.div>
             );
@@ -396,3 +275,19 @@ export const DeviceStatus = () => {
     </div>
   );
 };
+
+function StatusBadge({ status }: { status: HeartbeatStatus }) {
+  const labels: Record<HeartbeatStatus, string> = { online: 'ACTIVE', stale: 'STALE', offline: 'OFFLINE' };
+  const colors: Record<HeartbeatStatus, string> = {
+    online: 'border-emerald-500/25 bg-emerald-500/10 text-emerald-400',
+    stale: 'border-amber-500/25 bg-amber-500/10 text-amber-400',
+    offline: 'border-red-500/25 bg-red-500/10 text-red-400',
+  };
+
+  return (
+    <div className={`inline-flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 font-mono text-xs font-bold ${colors[status]}`}>
+      <span className={`size-1.5 rounded-full ${status === 'online' ? 'bg-emerald-400' : status === 'stale' ? 'bg-amber-400' : 'bg-red-400'}`} />
+      {labels[status]}
+    </div>
+  );
+}

@@ -1,57 +1,30 @@
-import React from 'react';
-import { m, type Variants } from 'framer-motion';
 import { Terminal } from 'lucide-react';
 import { HeroBackground } from './HeroBackground';
+import { HeroTopology } from './HeroTopology';
 import { ScrambleText } from './ScrambleText';
 import { SocialDock } from './SocialDock';
 import { profile } from '@/data/profile';
 
 export function HeroSection({
-  particleLayer,
   prefersReducedMotion,
+  topologyQuality,
   onTerminalPreload,
   onTerminalRequest,
 }: {
-  particleLayer: React.ReactNode;
   prefersReducedMotion: boolean;
+  topologyQuality: 'full' | 'reduced';
   onTerminalPreload: (event: React.PointerEvent<HTMLElement> | React.FocusEvent<HTMLElement>) => void;
   onTerminalRequest: () => void;
 }) {
-  const container: Variants = prefersReducedMotion
-    ? { hidden: { opacity: 1 }, show: { opacity: 1 } }
-    : {
-        hidden: { opacity: 0 },
-        show: {
-          opacity: 1,
-          transition: {
-            staggerChildren: 0.1,
-            delayChildren: 0.3,
-          },
-        },
-      };
-
-  const item: Variants = prefersReducedMotion
-    ? { hidden: { y: 0, opacity: 1 }, show: { y: 0, opacity: 1 } }
-    : {
-        hidden: { y: 20, opacity: 0 },
-        show: { y: 0, opacity: 1, transition: { type: 'spring', stiffness: 50 } },
-      };
-
   return (
     <section
       id="hero"
       className="relative flex min-h-[100svh] min-h-[100dvh] snap-start flex-col items-start justify-center overflow-hidden px-5 py-16 sm:px-8 sm:py-24 lg:px-12"
     >
       <HeroBackground />
-      <div className="pointer-events-none absolute inset-0 z-[1]">{particleLayer}</div>
-      <m.div
-        variants={container}
-        initial="hidden"
-        animate="show"
-        className="relative z-10 w-full max-w-5xl space-y-5 px-1 text-left sm:space-y-8"
-      >
-        <m.div
-          variants={item}
+      {!prefersReducedMotion ? <HeroTopology quality={topologyQuality} /> : null}
+      <div className="relative z-10 w-full max-w-5xl space-y-5 px-1 text-left sm:space-y-8">
+        <div
           className="liquid-glass-control inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium uppercase tracking-[0.16em] text-white/72"
         >
           <span className="relative flex size-2" aria-hidden>
@@ -59,34 +32,36 @@ export function HeroSection({
             <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
           </span>
           {profile.availability}
-        </m.div>
+        </div>
 
-        <m.h1
-          variants={item}
-          className="font-display text-[clamp(2.85rem,13vw,8.25rem)] font-medium tracking-tight leading-[1.01] sm:leading-[1.02]"
-        >
+        <h1 className="font-display text-[clamp(2.85rem,13vw,8.25rem)] font-medium tracking-tight leading-[1.01] sm:leading-[1.02]">
           <span className="mb-2 block text-xl font-normal tracking-normal text-white/45 sm:mb-3 sm:text-3xl md:text-4xl">
             <ScrambleText text={profile.hero.eyebrowName} interval={45} hoverTrigger={true} />
           </span>
           <span className="text-gradient block">{profile.hero.headlineAccent}</span>
           <span className="block text-white">{profile.hero.headline}</span>
-        </m.h1>
+        </h1>
 
-        <m.p
-          variants={item}
-          className="max-w-2xl text-base font-light leading-relaxed text-white/60 sm:text-xl md:text-2xl"
-        >
+        <p className="max-w-2xl text-base font-light leading-relaxed text-white/60 sm:text-xl md:text-2xl">
           <span className="font-medium text-white/90">{profile.role}</span> {profile.hero.description}
-        </m.p>
+        </p>
 
-        <m.div
-          variants={item}
-          className="-ml-5 flex w-screen justify-center pt-2 sm:-ml-8 sm:pt-4 lg:-ml-12"
-        >
+        <div className="flex max-w-3xl flex-wrap gap-2" aria-label="Core capabilities">
+          {profile.signals.map((signal) => (
+            <span
+              key={signal}
+              className="rounded-full border border-white/10 bg-black/20 px-2.5 py-1 font-mono text-[10px] uppercase tracking-[0.12em] text-white/62 backdrop-blur-sm"
+            >
+              {signal}
+            </span>
+          ))}
+        </div>
+
+        <div className="-ml-5 flex w-screen justify-center pt-2 sm:-ml-8 sm:pt-4 lg:-ml-12">
           <SocialDock />
-        </m.div>
+        </div>
 
-        <m.div variants={item} className="-ml-5 flex w-screen justify-center pt-0 sm:-ml-8 sm:pt-1 lg:-ml-12">
+        <div className="-ml-5 flex w-screen justify-center pt-0 sm:-ml-8 sm:pt-1 lg:-ml-12">
           <button
             type="button"
             onClick={onTerminalRequest}
@@ -102,8 +77,8 @@ export function HeroSection({
               ~
             </kbd>
           </button>
-        </m.div>
-      </m.div>
+        </div>
+      </div>
     </section>
   );
 }
