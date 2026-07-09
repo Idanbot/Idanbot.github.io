@@ -95,20 +95,20 @@ function createThreeScene(
       const localZ = posAttr.getZ(i);
       const worldZ = localZ + terrain.position.z;
       
-      // Calculate smooth noise for terrain with highly dynamic stochastic morphing
-      // Slowly shifting base to change the overall shape of the mountains over time
-      const baseTerrain = Math.sin(x * 0.3 + elapsed * 0.2) * Math.cos(worldZ * 0.3 - elapsed * 0.15) * 1.8;
+      // Ocean wave simulation
+      // Main directional swell rolling diagonally
+      const swell1 = Math.sin(x * 0.2 + worldZ * 0.3 + elapsed * 1.2) * 0.7;
       
-      // Medium-frequency waves that flow diagonally across the grid
-      const diagonalWave = Math.sin((x + worldZ) * 0.4 + elapsed * 0.7) * 0.6;
+      // Cross directional swell for intersecting wave peaks
+      const swell2 = Math.sin(x * -0.3 + worldZ * 0.2 + elapsed * 1.5) * 0.5;
       
-      // Dynamic interference pattern for unpredictable shifting
-      const interference = Math.sin(x * 0.7 - elapsed * 0.5) * Math.cos(worldZ * 0.8 + elapsed * 0.6) * 0.4;
+      // Smaller choppy surface waves moving faster
+      const chop = Math.sin(x * 0.8 + worldZ * 1.1 + elapsed * 2.5) * 0.15;
       
-      // High-frequency detail ripples for micro-texture
-      const detail = Math.sin(x * 1.5 + elapsed * 1.2) * Math.cos(worldZ * 1.8 - elapsed * 1.0) * 0.2;
+      // Deep, slow overall rolling motion
+      const deepRoll = Math.sin(x * 0.1 - worldZ * 0.1 + elapsed * 0.5) * 0.4;
       
-      const y = baseTerrain + diagonalWave + interference + detail;
+      const y = swell1 + swell2 + chop + deepRoll;
       posAttr.setY(i, y);
     }
     posAttr.needsUpdate = true;
