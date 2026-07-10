@@ -76,7 +76,7 @@ function createThreeScene(
   // WebGL LineBasicMaterial linewidth is typically 1px max. We reduce opacity to make them visually thinner/softer.
   const edgeMat = new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.525 });
   
-  const monolithData: { mesh: THREE.Mesh, targetY: number }[] = [];
+  const monolithData: { mesh: Three.Mesh, targetY: number }[] = [];
   
   for(let i=0; i<8; i++) {
     const mesh = new THREE.Mesh(monolithGeo, monolithMat);
@@ -112,9 +112,10 @@ function createThreeScene(
     terrain.position.z = -10 + scrollZ;
     nodes.position.z = terrain.position.z;
 
-    // Dynamically update vertex Y positions based on their absolute world Z position
-    // This makes the mountain noise stay locked in world space while the grid lines flow towards the camera
-    const posAttr = terrainGeo.attributes.position as THREE.BufferAttribute;
+
+
+    // Animate Terrain
+    const posAttr = terrainGeo.attributes.position as Three.BufferAttribute;
     for (let i = 0; i < posAttr.count; i++) {
       const x = posAttr.getX(i);
       const localZ = posAttr.getZ(i);
