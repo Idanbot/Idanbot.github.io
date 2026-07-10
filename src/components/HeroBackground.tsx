@@ -100,30 +100,18 @@ function createThreeScene(
   }
   monolithEdges.setAttribute('color', new THREE.Float32BufferAttribute(eColors, 3));
   const edgeMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.525 });
-
-  // 2. Scanning Lasers
-  const scannerGeo = new THREE.BoxGeometry(1.7, 0.05, 1.7);
-  const scannerMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 });
-  const scannerEdges = new THREE.EdgesGeometry(scannerGeo);
-  const scannerEdgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
   
-  const monolithData: { mesh: Three.Mesh, targetY: number, scanner: Three.Mesh, randomPhase: number }[] = [];
+  const monolithData: { mesh: Three.Mesh, targetY: number, randomPhase: number }[] = [];
   
   for(let i=0; i<8; i++) {
     const mesh = new THREE.Mesh(monolithGeo, monolithMat);
     const edges = new THREE.LineSegments(monolithEdges, edgeMat);
     mesh.add(edges);
     
-    // Add scanner to this monolith
-    const scanner = new THREE.Mesh(scannerGeo, scannerMat);
-    const sEdges = new THREE.LineSegments(scannerEdges, scannerEdgeMat);
-    scanner.add(sEdges);
-    mesh.add(scanner);
-
     const targetY = (Math.random() - 0.5) * 4;
     mesh.position.set((Math.random() - 0.5) * 35, -30, -10 - Math.random() * 25);
     monolithsGroup.add(mesh);
-    monolithData.push({ mesh, targetY, scanner, randomPhase: Math.random() * Math.PI * 2 });
+    monolithData.push({ mesh, targetY, randomPhase: Math.random() * Math.PI * 2 });
   }
   group.add(monolithsGroup);
 
@@ -185,21 +173,16 @@ function createThreeScene(
     // 4. Pulsing "Breathing" Glow (Global)
     const pulse = Math.sin(elapsed * 2) * 0.5 + 0.5; // 0 to 1
     edgeMat.opacity = 0.3 + pulse * 0.4;
-    scannerMat.opacity = 0.5 + pulse * 0.5;
 
     // Animate Monoliths
     monolithData.forEach(data => {
-      const { mesh, targetY, scanner, randomPhase } = data;
+      const { mesh, targetY } = data;
       mesh.position.z += 0.08;
       
       if (mesh.position.y < targetY) {
         mesh.position.y += (targetY - mesh.position.y) * 0.1 + 0.1;
         if (mesh.position.y > targetY) mesh.position.y = targetY;
       }
-
-      // Animate Scanner
-      // Box height is 12, so local Y goes from -6 to +6.
-      scanner.position.y = Math.sin(elapsed * 2 + randomPhase) * 5.5;
 
       if (mesh.position.z > 5) {
         mesh.position.z -= 35;
