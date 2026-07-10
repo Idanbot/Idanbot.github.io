@@ -1,4 +1,5 @@
 import type * as Three from 'three';
+import { createHeroFrameClock, frameDamping, HERO_TARGET_FPS } from './heroTiming';
 
 export type HeroSceneQuality = 'full' | 'reduced';
 
@@ -9,6 +10,10 @@ export interface HeroSceneController {
   setPointer: (x: number, y: number) => void;
   dispose: () => void;
 }
+
+type HeroProbeWindow = Window & {
+  __heroFrameProbe?: { frames: number };
+};
 
 const terrainVertexShader = `
   uniform float uTime;
@@ -248,13 +253,13 @@ export function createHeroScene(
 
   let width = 1;
   let elapsed = 0;
-  let previousFrame = 0;
   let animationFrame = 0;
   let disposed = false;
   let targetPointerX = 0;
   let targetPointerY = 0;
+  const frameClock = createHeroFrameClock(HERO_TARGET_FPS[quality]);
 
-  const render = () => {
+  const render = (deltaSeconds = 0) => {
     const scroll = (elapsed * 1.8) % cellSize;
     terrain.position.z = -10 + scroll;
     terrainNodes.position.z = terrain.position.z;
@@ -264,16 +269,19 @@ export function createHeroScene(
     nodeUniforms.uScroll.value = scroll;
     packetUniforms.uTime.value = elapsed;
 
-    camera.position.x += (targetPointerX * 2.2 - camera.position.x) * 0.045;
-    camera.position.y += (2 - targetPointerY * 1.4 - camera.position.y) * 0.045;
+    const cameraDamping = frameDamping(1.4, deltaSeconds);
+    camera.position.x += (targetPointerX * 2.2 - camera.position.x) * cameraDamping;
+    camera.position.y += (2 - targetPointerY * 1.4 - camera.position.y) * cameraDamping;
     camera.lookAt(0, -0.35, -3.5);
 
     const pulse = Math.sin(elapsed * 1.5) * 0.5 + 0.5;
     edgeMaterial.opacity = 0.28 + pulse * 0.26;
+    const riseDamping = frameDamping(2.5, deltaSeconds);
     for (const monolith of monoliths) {
-      monolith.mesh.position.z += monolith.speed * 0.045;
+      monolith.mesh.position.z += monolith.speed * 1.35 * deltaSeconds;
       if (monolith.mesh.position.y < monolith.targetY) {
-        monolith.mesh.position.y += (monolith.targetY - monolith.mesh.position.y) * 0.08;
+        monolith.mesh.position.y +=
+          (monolith.targetY - monolith.mesh.position.y) * riseDamping;
       }
       if (monolith.mesh.position.z > 6) {
         monolith.mesh.position.z = -34 - random() * 8;
@@ -284,16 +292,16 @@ export function createHeroScene(
     }
 
     renderer.render(scene, camera);
+    const probe = (window as HeroProbeWindow).__heroFrameProbe;
+    if (probe) probe.frames += 1;
   };
 
   const frameLoop = (timestamp: number) => {
     if (disposed) return;
-    const targetFps = quality === 'full' ? 30 : 24;
-    if (!previousFrame || timestamp - previousFrame >= 1000 / targetFps) {
-      const delta = Math.min((timestamp - previousFrame || 16) / 1000, 0.05);
+    const delta = frameClock.tick(timestamp);
+    if (delta !== null) {
       elapsed += delta;
-      render();
-      previousFrame = timestamp;
+      render(delta);
     }
     animationFrame = window.requestAnimationFrame(frameLoop);
   };
@@ -302,7 +310,7 @@ export function createHeroScene(
     if (!animationFrame) return;
     window.cancelAnimationFrame(animationFrame);
     animationFrame = 0;
-    previousFrame = 0;
+    frameClock.reset();
   };
 
   return {

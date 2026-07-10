@@ -95,6 +95,31 @@ async function verifyAnimatedHero(page: Page, testInfo: TestInfo) {
   });
 }
 
+async function measureHeroFrames(page: Page, durationMs = 1_000) {
+  return page.evaluate(
+    (duration) =>
+      new Promise<{ browserFrames: number; sceneFrames: number }>((resolve) => {
+        const probeWindow = window as Window & { __heroFrameProbe?: { frames: number } };
+        probeWindow.__heroFrameProbe = { frames: 0 };
+        const startedAt = performance.now();
+        let browserFrames = 0;
+
+        const sample = (timestamp: number) => {
+          browserFrames += 1;
+          if (timestamp - startedAt < duration) {
+            requestAnimationFrame(sample);
+            return;
+          }
+          const sceneFrames = probeWindow.__heroFrameProbe?.frames ?? 0;
+          delete probeWindow.__heroFrameProbe;
+          resolve({ browserFrames, sceneFrames });
+        };
+        requestAnimationFrame(sample);
+      }),
+    durationMs
+  );
+}
+
 test('renders the prerendered profile without runtime errors', async ({ page }) => {
   const runtimeErrors: string[] = [];
   page.on('pageerror', (error) => runtimeErrors.push(error.message));
@@ -122,6 +147,11 @@ test('loads lazy sections when desktop navigation targets them', async ({ page }
   await expect(page.getByRole('heading', { name: /Live System Monitor/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Live Device Heartbeats' })).toBeVisible();
   await expect(page.getByText('build-agent', { exact: true })).toBeVisible();
+  await expect
+    .poll(() =>
+      page.locator('#monitor').evaluate((element) => Math.abs(element.getBoundingClientRect().top))
+    )
+    .toBeLessThan(180);
   await expect(page.getByRole('link', { name: 'Live', exact: true })).toHaveAttribute(
     'aria-current',
     'page'
@@ -177,6 +207,8 @@ test('renders a nonblank moving Three.js scene on desktop and mobile', async ({ 
   await mockHeartbeats(page);
   await page.goto('/');
   await verifyAnimatedHero(page, testInfo);
+  const frameSample = await measureHeroFrames(page);
+  expect(frameSample.sceneFrames / frameSample.browserFrames).toBeGreaterThanOrEqual(0.85);
 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.reload();
