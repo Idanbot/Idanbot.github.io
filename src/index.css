@@ -330,6 +330,99 @@
     color: transparent;
   }
 
+  .hero-poster {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    opacity: 1;
+    background:
+      radial-gradient(ellipse 70% 54% at 68% 34%, rgba(56, 189, 248, 0.13), transparent 62%),
+      radial-gradient(ellipse 92% 68% at 50% 0%, rgba(59, 130, 246, 0.17), transparent 66%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent 36%);
+    transition: opacity 700ms ease;
+  }
+
+  .hero-poster-enhanced {
+    opacity: 0.42;
+  }
+
+  .hero-poster::before {
+    content: '';
+    position: absolute;
+    inset: 43% -12% -35%;
+    transform: perspective(460px) rotateX(62deg) scale(1.16);
+    transform-origin: center top;
+    background-image:
+      linear-gradient(rgba(96, 165, 250, 0.14) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(96, 165, 250, 0.12) 1px, transparent 1px);
+    background-size: 48px 48px;
+    mask-image: linear-gradient(to bottom, transparent, black 14%, black 70%, transparent 96%);
+  }
+
+  .hero-poster::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0.34;
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent 5px,
+      rgba(255, 255, 255, 0.018) 6px
+    );
+    mask-image: linear-gradient(to bottom, black, transparent 82%);
+  }
+
+  .hero-poster-horizon {
+    position: absolute;
+    left: 7%;
+    right: 7%;
+    top: 53%;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(125, 211, 252, 0.38), transparent);
+    box-shadow: 0 0 32px rgba(96, 165, 250, 0.24);
+  }
+
+  .hero-poster-node {
+    position: absolute;
+    width: 2px;
+    background: linear-gradient(to top, transparent, rgba(125, 211, 252, 0.5));
+    box-shadow: 0 -8px 28px rgba(56, 189, 248, 0.26);
+  }
+
+  .hero-poster-node::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: -2px;
+    width: 5px;
+    height: 5px;
+    border: 1px solid rgba(186, 230, 253, 0.72);
+    background: rgba(56, 189, 248, 0.28);
+    transform: translate(-50%, -50%) rotate(45deg);
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.48);
+  }
+
+  .hero-poster-node-a {
+    right: 14%;
+    top: 29%;
+    height: 24%;
+  }
+
+  .hero-poster-node-b {
+    right: 35%;
+    top: 38%;
+    height: 15%;
+    opacity: 0.66;
+  }
+
+  .hero-poster-node-c {
+    left: 58%;
+    top: 44%;
+    height: 9%;
+    opacity: 0.48;
+  }
+
 
 
   .text-cloud {

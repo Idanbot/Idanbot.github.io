@@ -41,10 +41,10 @@ const measurements = {
 
 const budgets = {
   entryJavaScript: 70 * kibibyte,
-  initialJavaScript: 100 * kibibyte,
+  initialJavaScript: 76 * kibibyte,
   css: 18 * kibibyte,
   fonts: 90 * kibibyte,
-  heroSceneJavaScript: 200 * kibibyte,
+  heroSceneJavaScript: 190 * kibibyte,
 };
 
 const failures = Object.entries(budgets)

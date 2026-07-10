@@ -2,10 +2,11 @@ import { m } from 'framer-motion';
 import { Building2, CalendarDays, GitBranch, Inbox, Tag } from 'lucide-react';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { profile } from '@/data/profile';
+import { MotionBoundary } from './MotionBoundary';
 
 const commits = [...profile.experience];
 
-export const GitHistory = () => {
+const GitHistoryContent = () => {
   const prefersReducedMotion = usePrefersReducedMotion();
 
   if (commits.length === 0) {
@@ -119,3 +120,9 @@ export const GitHistory = () => {
     </div>
   );
 };
+
+export const GitHistory = () => (
+  <MotionBoundary>
+    <GitHistoryContent />
+  </MotionBoundary>
+);

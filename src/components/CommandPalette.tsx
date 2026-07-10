@@ -3,6 +3,12 @@ import { Command } from 'cmdk';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { OPEN_TERMINAL_EVENT } from '@/lib/site-events';
 import {
+  siteSections,
+  socialActions,
+  terminalShortcuts,
+  type SiteSectionIcon,
+} from '@/data/siteActions';
+import {
   Search,
   Terminal,
   Github,
@@ -13,6 +19,19 @@ import {
   Activity,
   Home,
 } from 'lucide-react';
+
+const sectionIcons = {
+  home: Home,
+  layers: Layers,
+  history: FileText,
+  activity: Activity,
+} satisfies Record<SiteSectionIcon, typeof Home>;
+
+const socialIcons = {
+  github: Github,
+  linkedin: Linkedin,
+  email: Mail,
+} as const;
 
 export const CommandPalette = ({ startOpen = false }: { startOpen?: boolean }) => {
   const [open, setOpen] = useState(startOpen);
@@ -45,7 +64,8 @@ export const CommandPalette = ({ startOpen = false }: { startOpen?: boolean }) =
       open={open}
       onOpenChange={setOpen}
       label="Global Command Menu"
-      className="liquid-glass fixed top-1/2 left-1/2 z-[999] w-[min(100vw-1.5rem,640px)] max-h-[min(85dvh,560px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-2 outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      contentClassName="liquid-glass fixed top-1/2 left-1/2 z-[999] w-[min(100vw-1.5rem,640px)] max-h-[min(85dvh,560px)] -translate-x-1/2 -translate-y-1/2 rounded-2xl p-2 outline-none focus-visible:ring-2 focus-visible:ring-primary/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      className="w-full"
       overlayClassName="fixed inset-0 z-[998] bg-black/80 backdrop-blur-sm"
     >
       <div className="flex items-center border-b border-white/10 px-3 pb-2 mb-2">
@@ -80,97 +100,58 @@ export const CommandPalette = ({ startOpen = false }: { startOpen?: boolean }) =
               ~
             </kbd>
           </Command.Item>
-          <Command.Item
-            onSelect={() => runCommand(() => scrollToId('hero'))}
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          >
-            <Home size={16} />
-            <span>Go to Hero</span>
-          </Command.Item>
-          <Command.Item
-            onSelect={() => runCommand(() => scrollToId('skills'))}
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          >
-            <Layers size={16} />
-            <span>Go to Stack</span>
-          </Command.Item>
-          <Command.Item
-            onSelect={() => runCommand(() => scrollToId('history'))}
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          >
-            <FileText size={16} />
-            <span>Go to History</span>
-          </Command.Item>
-          <Command.Item
-            onSelect={() => runCommand(() => scrollToId('monitor'))}
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          >
-            <Activity size={16} />
-            <span>Go to Site info</span>
-          </Command.Item>
+          {siteSections.map((section) => {
+            const Icon = sectionIcons[section.icon];
+            return (
+              <Command.Item
+                key={section.id}
+                onSelect={() => runCommand(() => scrollToId(section.id))}
+                className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              >
+                <Icon size={16} />
+                <span>{section.commandLabel}</span>
+              </Command.Item>
+            );
+          })}
         </Command.Group>
 
         <Command.Group heading="Terminal Shortcuts" className="mb-2 px-2 text-xs font-medium text-gray-500">
-          <Command.Item
-            onSelect={() =>
-              runCommand(() => {
-                window.__pendingTerminalCommand = 'neofetch';
-                window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT));
-              })
-            }
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          >
-            <Terminal size={16} />
-            <span>Run 'neofetch'</span>
-          </Command.Item>
-          <Command.Item
-            onSelect={() =>
-              runCommand(() => {
-                window.__pendingTerminalCommand = 'joke';
-                window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT));
-              })
-            }
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          >
-            <Terminal size={16} />
-            <span>Run 'joke'</span>
-          </Command.Item>
-          <Command.Item
-            onSelect={() =>
-              runCommand(() => {
-                window.__pendingTerminalCommand = 'skills';
-                window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT));
-              })
-            }
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          >
-            <Terminal size={16} />
-            <span>Run 'skills'</span>
-          </Command.Item>
+          {terminalShortcuts.map((shortcut) => (
+            <Command.Item
+              key={shortcut.command}
+              onSelect={() =>
+                runCommand(() => {
+                  window.__pendingTerminalCommand = shortcut.command;
+                  window.dispatchEvent(new CustomEvent(OPEN_TERMINAL_EVENT));
+                })
+              }
+              className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+            >
+              <Terminal size={16} />
+              <span>{shortcut.label}</span>
+            </Command.Item>
+          ))}
         </Command.Group>
 
         <Command.Group heading="Socials" className="mt-2 px-2 text-xs font-medium text-gray-500">
-          <Command.Item
-            onSelect={() => runCommand(() => window.open('https://github.com/Idanbot', '_blank'))}
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          >
-            <Github size={16} />
-            <span>GitHub</span>
-          </Command.Item>
-          <Command.Item
-            onSelect={() => runCommand(() => window.open('https://www.linkedin.com/in/idanbotbol/', '_blank'))}
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          >
-            <Linkedin size={16} />
-            <span>LinkedIn</span>
-          </Command.Item>
-          <Command.Item
-            onSelect={() => runCommand(() => { window.location.href = 'mailto:idan@idanbot.uk'; })}
-            className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
-          >
-            <Mail size={16} />
-            <span>Email</span>
-          </Command.Item>
+          {socialActions.map((social) => {
+            const Icon = socialIcons[social.kind];
+            return (
+              <Command.Item
+                key={social.kind}
+                onSelect={() =>
+                  runCommand(() => {
+                    if (social.href.startsWith('mailto:')) window.location.href = social.href;
+                    else window.open(social.href, '_blank', 'noopener,noreferrer');
+                  })
+                }
+                className="flex min-h-11 cursor-pointer items-center gap-2 rounded px-2 py-2.5 text-gray-300 transition-colors aria-selected:bg-white/10 aria-selected:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/60"
+              >
+                <Icon size={16} />
+                <span>{social.label}</span>
+              </Command.Item>
+            );
+          })}
         </Command.Group>
       </Command.List>
     </Command.Dialog>
