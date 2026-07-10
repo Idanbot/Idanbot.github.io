@@ -38,7 +38,7 @@ function createThreeScene(
   // Terrain Grid
   const gridWidth = 40;
   const gridHeight = 40;
-  const segments = quality === 'full' ? 60 : 30;
+  const segments = quality === 'full' ? 54 : 27; // Reduced by ~10% linearly (reduces vertices by ~20%)
   const cellSize = gridHeight / segments;
   const terrainGeo = new THREE.PlaneGeometry(gridWidth, gridHeight, segments, segments);
   terrainGeo.rotateX(-Math.PI / 2);
