@@ -1,8 +1,10 @@
+import { SITE_SECTION_IDS, type SiteSectionId } from '@/data/siteActions';
+
 /** Pick which section id is “current” based on which block best contains the viewport focal line. */
 
-export const SECTION_IDS = ['hero', 'skills', 'history', 'monitor'] as const;
+export const SECTION_IDS = SITE_SECTION_IDS;
 
-export type SectionId = (typeof SECTION_IDS)[number];
+export type SectionId = SiteSectionId;
 
 export function getRects(
   ids: readonly string[],

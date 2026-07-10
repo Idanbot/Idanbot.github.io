@@ -1,10 +1,10 @@
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
-import { profile } from '@/data/profile';
+import { socialActions } from '@/data/siteActions';
 
 export function SocialDock() {
   return (
     <div className="liquid-glass flex items-center gap-1.5 rounded-full p-1.5">
-      {profile.socials.map((social) => (
+      {socialActions.map((social) => (
         <SocialLink
           key={social.kind}
           href={social.href}

@@ -1,14 +1,8 @@
 import type { KeyboardEvent } from 'react';
-
-const items = [
-  { id: 'hero', label: 'Profile' },
-  { id: 'skills', label: 'Stack' },
-  { id: 'history', label: 'Experience' },
-  { id: 'monitor', label: 'Live' },
-];
+import { siteSections } from '@/data/siteActions';
 
 export function DesktopNav({ activeSection }: { activeSection: string }) {
-  const activeIndex = Math.max(0, items.findIndex((item) => item.id === activeSection));
+  const activeIndex = Math.max(0, siteSections.findIndex((item) => item.id === activeSection));
 
   const handleKeyDown = (event: KeyboardEvent<HTMLElement>) => {
     if (event.key !== 'ArrowRight' && event.key !== 'ArrowLeft') return;
@@ -48,7 +42,7 @@ export function DesktopNav({ activeSection }: { activeSection: string }) {
         >
           <span className="animate-gradient-shift absolute inset-0 bg-gradient-to-tr from-cloud/30 via-platform/15 to-transparent" />
         </li>
-        {items.map((navItem) => {
+        {siteSections.map((navItem) => {
           const active = activeSection === navItem.id;
           return (
             <li key={navItem.id} className="min-w-0">

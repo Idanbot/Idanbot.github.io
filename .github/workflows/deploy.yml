@@ -18,7 +18,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       # Pinned SHAs reduce supply-chain drift; update when bumping major actions.
       - name: Checkout
@@ -44,6 +44,12 @@ jobs:
 
       - name: Check performance budget
         run: npm run performance:check
+
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+
+      - name: Browser acceptance tests
+        run: npm run test:e2e
 
       - name: Verify CNAME
         run: |
@@ -76,6 +82,17 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
+      - name: Checkout deployment checks
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Setup Node
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444 # v5.0.0
+        with:
+          node-version: 24
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@cd2ce8fcbc39b97be8ca5fce6e763baed58fa128 # v5.0.0
+
+      - name: Verify deployed HTML and asset MIME types
+        run: node scripts/check-deployment.mjs "${{ steps.deployment.outputs.page_url }}"

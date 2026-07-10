@@ -16,22 +16,30 @@ npm run lint
 npm run test
 npm run build
 npm run performance:check
+npm run test:e2e
 npm run preview
 ```
 
-`performance:check` validates the built GitHub Pages payload: initial JavaScript, CSS, local fonts,
-and accidental preloads of the retired animation runtimes.
+`build` prerenders the application and validates the final Pages artifact, including its root markup,
+hashed module entry, metadata, `CNAME`, and critical assets. `performance:check` enforces the initial
+JavaScript, deferred hero runtime, CSS, and local-font budgets.
+
+`test:e2e` runs Playwright against the production preview. Install its browser once on a new machine:
+
+```bash
+npx playwright install chromium
+```
 
 ## Terminal
 
 Press `~` to open the terminal. The `heartbeat` command prints `machine: status` rows from the
 live heartbeat endpoint; use `heartbeat -json` to inspect the raw response payload.
 
-Continuous integration runs on every push and pull request via [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (**lint**, **test**, **build**).
+Continuous integration runs on every push and pull request via [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (**audit**, **lint**, **unit tests**, **build contract**, **performance budget**, and **browser acceptance tests**).
 
 ## Deploy (GitHub Pages + custom domain)
 
-The workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs on pushes to `main`: **lint**, **test**, **build**, verifies [`public/CNAME`](public/CNAME) in `dist`, then publishes with **GitHub Pages**.
+The workflow [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) runs on pushes to `main`, publishes the verified artifact with **GitHub Pages**, then fetches the deployed module and checks its JavaScript MIME type.
 
 ### Repository settings
 

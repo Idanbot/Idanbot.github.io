@@ -26,12 +26,16 @@ async function main() {
 
     console.log('Rendering app...');
     const appHtml = render();
+    if (!appHtml.trim()) throw new Error('SSR renderer returned empty markup');
 
     console.log('Injecting pre-rendered content...');
-    html = html.replace(
-      '<div id="root"></div>',
-      `<div id="root">${appHtml}</div>`
-    );
+    const rootMarker = '<div id="root"></div>';
+    const markerCount = html.split(rootMarker).length - 1;
+    if (markerCount !== 1) {
+      throw new Error(`Expected one empty root marker, found ${markerCount}`);
+    }
+    html = html.replace(rootMarker, `<div id="root">${appHtml}</div>`);
+    if (html.includes(rootMarker)) throw new Error('Empty root marker remained after prerendering');
 
     console.log('Writing back to dist/index.html...');
     fs.writeFileSync(templatePath, html, 'utf-8');

@@ -33,6 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { profile } from '@/data/profile';
+import { MotionBoundary } from './MotionBoundary';
 
 const stacks: { name: string; category: string; Icon: IconType }[] = [
   { name: 'Kubernetes', category: 'Platform', Icon: SiKubernetes },
@@ -85,7 +86,9 @@ const categoryAccent = (category: string) => {
   return accents[category] ?? 'stack-accent-primary';
 };
 
-export const StackSection = ({ className }: { className?: string }) => {
+type StackSectionProps = { className?: string };
+
+const StackSectionContent = ({ className }: StackSectionProps) => {
   const prefersReducedMotion = usePrefersReducedMotion();
   const marqueeStacks = prefersReducedMotion ? stacks : [...stacks, ...stacks];
 
@@ -243,3 +246,9 @@ export const StackSection = ({ className }: { className?: string }) => {
     </section>
   );
 };
+
+export const StackSection = (props: StackSectionProps) => (
+  <MotionBoundary>
+    <StackSectionContent {...props} />
+  </MotionBoundary>
+);

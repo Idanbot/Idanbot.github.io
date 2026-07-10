@@ -7,6 +7,7 @@ import { SectionSkeleton } from './components/SectionSkeleton';
 import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion';
 import { useActiveSection } from './hooks/useActiveSection';
 import { OPEN_TERMINAL_EVENT } from './lib/site-events';
+import { siteLinks } from './data/siteActions';
 
 type NavigatorWithHardwareHints = Navigator & {
   connection?: { saveData?: boolean };
@@ -54,8 +55,6 @@ const preloadStack = () => loadStackSection();
 const preloadHistory = () => loadGitHistory();
 const preloadStatus = () => loadStatusPage();
 
-import { LazyMotion, domAnimation } from 'framer-motion';
-
 function App() {
   const activeSection = useActiveSection();
   const prefersReducedMotion = usePrefersReducedMotion();
@@ -99,7 +98,6 @@ function App() {
   }, []);
 
   return (
-    <LazyMotion features={domAnimation}>
     <div className="relative min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-primary/25">
       <a href="#main-content" className="skip-link">
         Skip to main content
@@ -182,7 +180,7 @@ function App() {
 
       <footer className="relative z-[60] border-t border-white/5 bg-black/50 py-8 text-center backdrop-blur-md sm:py-12">
         <a
-          href="mailto:idan@idanbot.uk"
+          href={siteLinks.email}
           className="mb-5 inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.045] px-4 py-2.5 text-sm font-medium text-white/82 transition-colors hover:border-cloud/35 hover:bg-white/[0.08] hover:text-white focus-visible:ring-2 focus-visible:ring-cloud/70 focus-visible:ring-offset-2 focus-visible:ring-offset-background"
         >
           <Mail className="size-4 text-cloud" aria-hidden />
@@ -202,7 +200,6 @@ function App() {
         </p>
       </footer>
     </div>
-    </LazyMotion>
   );
 }
 

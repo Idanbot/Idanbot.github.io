@@ -3,6 +3,7 @@ import { m, type Variants } from 'framer-motion';
 import { AlertCircle, Clock, Cpu, Radio, RefreshCw, Server } from 'lucide-react';
 import { Card, CardContent } from './ui/card';
 import { cn } from '@/lib/utils';
+import { MotionBoundary } from './MotionBoundary';
 import {
   fetchHeartbeatMachines,
   getHeartbeatStatus,
@@ -41,7 +42,7 @@ function getCachedHeartbeats() {
   return typeof window === 'undefined' ? null : readHeartbeatCache();
 }
 
-export const DeviceStatus = () => {
+const DeviceStatusContent = () => {
   const [devices, setDevices] = useState<HeartbeatMachine[]>(() => {
     const cache = getCachedHeartbeats();
     return cache ? sortHeartbeatMachines(cache.machines) : [];
@@ -275,6 +276,12 @@ export const DeviceStatus = () => {
     </div>
   );
 };
+
+export const DeviceStatus = () => (
+  <MotionBoundary>
+    <DeviceStatusContent />
+  </MotionBoundary>
+);
 
 function StatusBadge({ status }: { status: HeartbeatStatus }) {
   const labels: Record<HeartbeatStatus, string> = { online: 'ACTIVE', stale: 'STALE', offline: 'OFFLINE' };

@@ -5,11 +5,14 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build && node scripts/prerender.js",
+    "build": "tsc -b && vite build && node scripts/prerender.js && node scripts/validate-dist.mjs",
     "lint": "eslint . --max-warnings 0",
     "performance:check": "node scripts/check-performance-budget.mjs",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "validate:dist": "node scripts/validate-dist.mjs",
+    "smoke:deployment": "node scripts/check-deployment.mjs https://idanbot.me/",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -30,6 +33,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.61.1",
     "@types/node": "^24.10.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
@@ -41,6 +45,7 @@
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.6.0",
     "jsdom": "^26.1.0",
+    "parse5": "^8.0.1",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.17",
     "typescript": "^5.9.3",
