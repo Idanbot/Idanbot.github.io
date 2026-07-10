@@ -67,25 +67,63 @@ function createThreeScene(
   // Layer: Cyber Monoliths
   const monolithsGroup = new THREE.Group();
   const monolithGeo = new THREE.BoxGeometry(1.5, 12, 1.5);
+  
+  // 1. Height-Based Gradients via Vertex Colors
+  const mPos = monolithGeo.attributes.position;
+  const mColors = [];
+  const mColorTop = new THREE.Color(0x0f172a);
+  const mColorBot = new THREE.Color(0x000000);
+  for (let i = 0; i < mPos.count; i++) {
+    const y = mPos.getY(i);
+    const t = Math.max(0, Math.min(1, (y + 6) / 12));
+    const c = mColorBot.clone().lerp(mColorTop, t);
+    mColors.push(c.r, c.g, c.b);
+  }
+  monolithGeo.setAttribute('color', new THREE.Float32BufferAttribute(mColors, 3));
+  
   const monolithMat = new THREE.MeshBasicMaterial({
-    color: 0x0f172a,
+    vertexColors: true,
     transparent: true,
     opacity: 0.8,
   });
-  const monolithEdges = new THREE.EdgesGeometry(monolithGeo);
-  // WebGL LineBasicMaterial linewidth is typically 1px max. We reduce opacity to make them visually thinner/softer.
-  const edgeMat = new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.525 });
   
-  const monolithData: { mesh: Three.Mesh, targetY: number }[] = [];
+  const monolithEdges = new THREE.EdgesGeometry(monolithGeo);
+  const ePos = monolithEdges.attributes.position;
+  const eColors = [];
+  const eColorTop = new THREE.Color(0x38bdf8);
+  const eColorBot = new THREE.Color(0x000000);
+  for (let i = 0; i < ePos.count; i++) {
+    const y = ePos.getY(i);
+    const t = Math.max(0, Math.min(1, (y + 6) / 12));
+    const c = eColorBot.clone().lerp(eColorTop, Math.pow(t, 2)); // Sharper curve for glowing tips
+    eColors.push(c.r, c.g, c.b);
+  }
+  monolithEdges.setAttribute('color', new THREE.Float32BufferAttribute(eColors, 3));
+  const edgeMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 0.525 });
+
+  // 2. Scanning Lasers
+  const scannerGeo = new THREE.BoxGeometry(1.7, 0.05, 1.7);
+  const scannerMat = new THREE.MeshBasicMaterial({ color: 0x38bdf8, transparent: true, opacity: 0.8 });
+  const scannerEdges = new THREE.EdgesGeometry(scannerGeo);
+  const scannerEdgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9 });
+  
+  const monolithData: { mesh: Three.Mesh, targetY: number, scanner: Three.Mesh, randomPhase: number }[] = [];
   
   for(let i=0; i<8; i++) {
     const mesh = new THREE.Mesh(monolithGeo, monolithMat);
     const edges = new THREE.LineSegments(monolithEdges, edgeMat);
     mesh.add(edges);
+    
+    // Add scanner to this monolith
+    const scanner = new THREE.Mesh(scannerGeo, scannerMat);
+    const sEdges = new THREE.LineSegments(scannerEdges, scannerEdgeMat);
+    scanner.add(sEdges);
+    mesh.add(scanner);
+
     const targetY = (Math.random() - 0.5) * 4;
     mesh.position.set((Math.random() - 0.5) * 35, -30, -10 - Math.random() * 25);
     monolithsGroup.add(mesh);
-    monolithData.push({ mesh, targetY });
+    monolithData.push({ mesh, targetY, scanner, randomPhase: Math.random() * Math.PI * 2 });
   }
   group.add(monolithsGroup);
 
@@ -144,15 +182,24 @@ function createThreeScene(
     camera.position.y += (2 - currentPointerY * 2 - camera.position.y) * 0.05;
     camera.lookAt(0, 0, 0);
 
+    // 4. Pulsing "Breathing" Glow (Global)
+    const pulse = Math.sin(elapsed * 2) * 0.5 + 0.5; // 0 to 1
+    edgeMat.opacity = 0.3 + pulse * 0.4;
+    scannerMat.opacity = 0.5 + pulse * 0.5;
+
     // Animate Monoliths
     monolithData.forEach(data => {
-      const { mesh, targetY } = data;
+      const { mesh, targetY, scanner, randomPhase } = data;
       mesh.position.z += 0.08;
       
       if (mesh.position.y < targetY) {
         mesh.position.y += (targetY - mesh.position.y) * 0.1 + 0.1;
         if (mesh.position.y > targetY) mesh.position.y = targetY;
       }
+
+      // Animate Scanner
+      // Box height is 12, so local Y goes from -6 to +6.
+      scanner.position.y = Math.sin(elapsed * 2 + randomPhase) * 5.5;
 
       if (mesh.position.z > 5) {
         mesh.position.z -= 35;
