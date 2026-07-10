@@ -73,14 +73,19 @@ function createThreeScene(
     opacity: 0.8,
   });
   const monolithEdges = new THREE.EdgesGeometry(monolithGeo);
-  const edgeMat = new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.7 });
+  // WebGL LineBasicMaterial linewidth is typically 1px max. We reduce opacity to make them visually thinner/softer.
+  const edgeMat = new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.525 });
+  
+  const monolithData: { mesh: THREE.Mesh, targetY: number }[] = [];
   
   for(let i=0; i<8; i++) {
     const mesh = new THREE.Mesh(monolithGeo, monolithMat);
     const edges = new THREE.LineSegments(monolithEdges, edgeMat);
     mesh.add(edges);
-    mesh.position.set((Math.random() - 0.5) * 35, (Math.random() - 0.5) * 4, -10 - Math.random() * 25);
+    const targetY = (Math.random() - 0.5) * 4;
+    mesh.position.set((Math.random() - 0.5) * 35, -30, -10 - Math.random() * 25);
     monolithsGroup.add(mesh);
+    monolithData.push({ mesh, targetY });
   }
   group.add(monolithsGroup);
 
@@ -139,11 +144,20 @@ function createThreeScene(
     camera.lookAt(0, 0, 0);
 
     // Animate Monoliths
-    monolithsGroup.children.forEach(mesh => {
+    monolithData.forEach(data => {
+      const { mesh, targetY } = data;
       mesh.position.z += 0.08;
+      
+      if (mesh.position.y < targetY) {
+        mesh.position.y += (targetY - mesh.position.y) * 0.1 + 0.1;
+        if (mesh.position.y > targetY) mesh.position.y = targetY;
+      }
+
       if (mesh.position.z > 5) {
         mesh.position.z -= 35;
         mesh.position.x = (Math.random() - 0.5) * 35;
+        mesh.position.y = -20;
+        data.targetY = (Math.random() - 0.5) * 4;
       }
     });
 
