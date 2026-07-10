@@ -89,7 +89,7 @@ function createThreeScene(
 
     // Dynamically update vertex Y positions based on their absolute world Z position
     // This makes the mountain noise stay locked in world space while the grid lines flow towards the camera
-    const posAttr = terrainGeo.attributes.position as THREE.BufferAttribute;
+    const posAttr = terrainGeo.attributes.position as Three.BufferAttribute;
     for (let i = 0; i < posAttr.count; i++) {
       const x = posAttr.getX(i);
       const localZ = posAttr.getZ(i);

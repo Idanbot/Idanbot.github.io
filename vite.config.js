@@ -10,16 +10,16 @@ export default defineConfig({
         outDir: 'dist',
         modulePreload: {
             polyfill: false,
-            resolveDependencies: function (url, deps) {
+            resolveDependencies(url, deps) {
                 if (!url.includes('CommandPalette')) {
-                    return deps.filter(function (dep) { return !dep.includes('cmdk'); });
+                    return deps.filter((dep) => !dep.includes('cmdk'));
                 }
                 return deps;
             },
         },
         rollupOptions: {
             output: {
-                manualChunks: function (id) {
+                manualChunks(id) {
                     if (!id.includes('node_modules'))
                         return;
                     if (id.includes('framer-motion'))
