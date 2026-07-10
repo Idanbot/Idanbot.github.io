@@ -64,6 +64,26 @@ function createThreeScene(
   nodes.position.copy(terrain.position);
   group.add(nodes);
 
+  // Layer: Cyber Monoliths
+  const monolithsGroup = new THREE.Group();
+  const monolithGeo = new THREE.BoxGeometry(1.5, 12, 1.5);
+  const monolithMat = new THREE.MeshBasicMaterial({
+    color: 0x0f172a,
+    transparent: true,
+    opacity: 0.8,
+  });
+  const monolithEdges = new THREE.EdgesGeometry(monolithGeo);
+  const edgeMat = new THREE.LineBasicMaterial({ color: 0x3b82f6, transparent: true, opacity: 0.7 });
+  
+  for(let i=0; i<8; i++) {
+    const mesh = new THREE.Mesh(monolithGeo, monolithMat);
+    const edges = new THREE.LineSegments(monolithEdges, edgeMat);
+    mesh.add(edges);
+    mesh.position.set((Math.random() - 0.5) * 35, (Math.random() - 0.5) * 4, -10 - Math.random() * 25);
+    monolithsGroup.add(mesh);
+  }
+  group.add(monolithsGroup);
+
   let width = 1;
   let height = 1;
   let animationFrame = 0;
@@ -117,6 +137,15 @@ function createThreeScene(
     camera.position.x += (currentPointerX * 3 - camera.position.x) * 0.05;
     camera.position.y += (2 - currentPointerY * 2 - camera.position.y) * 0.05;
     camera.lookAt(0, 0, 0);
+
+    // Animate Monoliths
+    monolithsGroup.children.forEach(mesh => {
+      mesh.position.z += 0.08;
+      if (mesh.position.z > 5) {
+        mesh.position.z -= 35;
+        mesh.position.x = (Math.random() - 0.5) * 35;
+      }
+    });
 
     renderer.render(scene, camera);
   };
