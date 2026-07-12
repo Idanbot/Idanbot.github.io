@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:lab": "vite --host 127.0.0.1 --open /portfolio-lab.html",
     "build": "tsc -b && vite build && node scripts/prerender.js && node scripts/validate-dist.mjs",
     "lint": "eslint . --max-warnings 0",
     "performance:check": "node scripts/check-performance-budget.mjs",

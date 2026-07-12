@@ -46,7 +46,7 @@ const GitHistoryContent = () => {
   };
 
   return (
-    <div className="mx-auto max-w-4xl px-2 py-6 font-mono sm:px-6">
+    <div className="site-reading-width mx-auto px-2 py-6 font-mono sm:px-6">
       <div className="mb-8 flex items-center gap-2 border-b border-border pb-2 text-muted-foreground">
         <GitBranch className="text-cloud/90" size={18} aria-hidden />
         <span className="text-foreground/90">professional trajectory</span>

@@ -140,12 +140,7 @@ export function HeroBackground({
       data-hero-renderer={rendererReady ? 'webgl' : 'poster'}
       aria-hidden
     >
-      <div className={`hero-poster ${rendererReady ? 'hero-poster-enhanced' : ''}`}>
-        <div className="hero-poster-horizon" />
-        <div className="hero-poster-node hero-poster-node-a" />
-        <div className="hero-poster-node hero-poster-node-b" />
-        <div className="hero-poster-node hero-poster-node-c" />
-      </div>
+      <div className={`hero-poster ${rendererReady ? 'hero-poster-enhanced' : ''}`} />
       <canvas
         ref={canvasRef}
         className={`absolute inset-0 h-full w-full [mask-image:linear-gradient(to_bottom,black_0%,black_82%,transparent_100%)] transition-opacity duration-700 ${

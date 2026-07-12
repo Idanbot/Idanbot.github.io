@@ -32,7 +32,7 @@ export const StatusPage = () => {
   return (
     <section className="relative overflow-hidden border-t border-white/5 bg-muted/30 px-4 py-16 sm:px-6 sm:py-20">
       <div className="pointer-events-none absolute inset-x-0 top-0 h-56 bg-[radial-gradient(circle_at_50%_0%,rgba(96,165,250,0.16),transparent_58%)]" />
-      <div className="relative mx-auto max-w-6xl">
+      <div className="site-content-width relative mx-auto">
         <header className="mb-8 text-center sm:mb-10">
           <p className="mb-2 font-mono text-xs uppercase tracking-[0.2em] text-cloud/80">
             Production surface

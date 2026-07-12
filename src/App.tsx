@@ -139,7 +139,10 @@ function App() {
           </Suspense>
         </LazyOnVisible>
 
-        <section id="history" className="cv-history py-24 sm:py-32 px-4 sm:px-6 max-w-7xl mx-auto snap-start">
+        <section
+          id="history"
+          className="cv-history site-content-width mx-auto px-4 py-24 sm:px-6 sm:py-32 snap-start"
+        >
           <div className="scroll-reveal mb-12 sm:mb-16 text-center">
             <h2 className="text-3xl sm:text-4xl font-bold mb-4 sm:mb-6">
               Professional <span className="text-gradient">Trajectory</span>
