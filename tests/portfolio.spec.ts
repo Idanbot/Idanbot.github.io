@@ -226,6 +226,53 @@ test('keeps the immediate poster for reduced motion without loading WebGL', asyn
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 });
 
+test('fits the main experience across target screen resolutions', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  const viewports = [
+    { width: 360, height: 780 },
+    { width: 1080, height: 1920 },
+    { width: 1920, height: 1080 },
+    { width: 3840, height: 2160 },
+  ];
+
+  for (const viewport of viewports) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+
+    const layout = await page.evaluate(() => {
+      const main = document.querySelector('main')?.getBoundingClientRect();
+      const hero = document.querySelector('#hero')?.getBoundingClientRect();
+      const title = document.querySelector('#hero h1')?.getBoundingClientRect();
+      const content = document.querySelector('.hero-content')?.getBoundingClientRect();
+      return {
+        viewportWidth: window.innerWidth,
+        viewportHeight: window.innerHeight,
+        bodyWidth: document.body.getBoundingClientRect().width,
+        overflow: document.documentElement.scrollWidth - window.innerWidth,
+        mainWidth: main?.width ?? 0,
+        mainLeft: main?.left ?? -1,
+        mainRight: main?.right ?? Number.POSITIVE_INFINITY,
+        heroHeight: hero?.height ?? 0,
+        titleLeft: title?.left ?? -1,
+        titleRight: title?.right ?? Number.POSITIVE_INFINITY,
+        contentWidth: content?.width ?? 0,
+        posterNodes: document.querySelectorAll('.hero-poster-node').length,
+      };
+    });
+
+    expect(layout.overflow).toBeLessThanOrEqual(1);
+    expect(Math.abs(layout.mainWidth - layout.bodyWidth)).toBeLessThanOrEqual(1);
+    expect(layout.heroHeight).toBeGreaterThanOrEqual(layout.viewportHeight - 1);
+    expect(layout.titleLeft).toBeGreaterThanOrEqual(layout.mainLeft);
+    expect(layout.titleRight).toBeLessThanOrEqual(layout.mainRight + 1);
+    expect(layout.posterNodes).toBe(0);
+
+    if (viewport.width >= 2200) {
+      expect(layout.contentWidth).toBeGreaterThanOrEqual(1700);
+    }
+  }
+});
+
 test.describe('without JavaScript', () => {
   test.use({ javaScriptEnabled: false });
 

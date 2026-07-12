@@ -18,13 +18,11 @@ export function HeroSection({
   return (
     <section
       id="hero"
-      className="relative flex min-h-[100svh] min-h-[100dvh] snap-start flex-col items-start justify-center overflow-hidden px-5 py-16 sm:px-8 sm:py-24 lg:px-12"
+      className="hero-section relative flex min-h-[100svh] min-h-[100dvh] snap-start flex-col items-start justify-center overflow-hidden px-5 py-16 sm:px-8 sm:py-24 lg:px-12"
     >
       <HeroBackground quality={topologyQuality} animate={!prefersReducedMotion} />
-      <div className="relative z-10 w-full max-w-5xl space-y-5 px-1 text-left sm:space-y-8">
-        <div
-          className="liquid-glass-control inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium uppercase tracking-[0.16em] text-white/72"
-        >
+      <div className="hero-content relative z-10 w-full space-y-5 px-1 text-left sm:space-y-8">
+        <div className="hero-availability liquid-glass-control inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-medium uppercase tracking-[0.16em] text-white/72">
           <span className="relative flex size-2" aria-hidden>
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
             <span className="relative inline-flex size-2 rounded-full bg-emerald-400" />
@@ -32,7 +30,7 @@ export function HeroSection({
           {profile.availability}
         </div>
 
-        <h1 className="font-display text-[clamp(2.85rem,13vw,8.25rem)] font-medium tracking-tight leading-[1.01] sm:leading-[1.02]">
+        <h1 className="hero-title font-display font-medium tracking-tight leading-[1.01] sm:leading-[1.02]">
           <span className="mb-2 block text-xl font-normal tracking-normal text-white/45 sm:mb-3 sm:text-3xl md:text-4xl">
             <ScrambleText text={profile.hero.eyebrowName} interval={45} hoverTrigger={true} />
           </span>
@@ -40,11 +38,14 @@ export function HeroSection({
           <span className="block text-white">{profile.hero.headline}</span>
         </h1>
 
-        <p className="max-w-2xl text-base font-light leading-relaxed text-white/60 sm:text-xl md:text-2xl">
+        <p className="hero-description max-w-2xl text-base font-light leading-relaxed text-white/60 sm:text-xl md:text-2xl">
           <span className="font-medium text-white/90">{profile.role}</span> {profile.hero.description}
         </p>
 
-        <div className="flex max-w-3xl flex-wrap gap-2" aria-label="Core capabilities">
+        <div
+          className="hero-signals flex max-w-3xl flex-wrap gap-2"
+          aria-label="Core capabilities"
+        >
           {profile.signals.map((signal) => (
             <span
               key={signal}

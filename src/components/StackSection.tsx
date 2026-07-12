@@ -95,7 +95,7 @@ const StackSectionContent = ({ className }: StackSectionProps) => {
   return (
     <section
       id="skills"
-      className={`mx-auto max-w-6xl border-t border-white/5 px-4 py-14 sm:px-6 md:py-20 snap-start ${className ?? ''}`}
+      className={`site-content-width mx-auto border-t border-white/5 px-4 py-14 sm:px-6 md:py-20 snap-start ${className ?? ''}`}
       aria-labelledby="skills-heading"
     >
       <m.div
