@@ -27,12 +27,8 @@ export function DesktopNav({ activeSection }: { activeSection: string }) {
     >
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-0 z-0 overflow-hidden rounded-full opacity-45 mix-blend-screen"
-      >
-        <div className="animate-blob-orbit-1 absolute left-[-20%] top-[-90%] size-44 rounded-full bg-cloud/35 blur-3xl" />
-        <div className="animate-blob-orbit-2 absolute bottom-[-90%] right-[-20%] size-44 rounded-full bg-platform/25 blur-3xl" />
-        <div className="animate-blob-orbit-3 absolute left-[30%] top-[10%] size-40 rounded-full bg-backend/20 blur-3xl" />
-      </div>
+        className="pointer-events-none absolute inset-0 z-0 rounded-full bg-[linear-gradient(110deg,rgba(96,165,250,0.12),transparent_38%,rgba(52,211,153,0.07)_72%,transparent)] opacity-70"
+      />
 
       <ul className="relative z-[1] grid grid-cols-4 text-sm font-medium text-white/60">
         <li
@@ -40,7 +36,7 @@ export function DesktopNav({ activeSection }: { activeSection: string }) {
           className="liquid-glass-control pointer-events-none absolute inset-y-0 left-0 z-0 w-1/4 overflow-hidden rounded-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]"
           style={{ transform: `translateX(${activeIndex * 100}%)` }}
         >
-          <span className="animate-gradient-shift absolute inset-0 bg-gradient-to-tr from-cloud/30 via-platform/15 to-transparent" />
+          <span className="absolute inset-0 bg-gradient-to-tr from-cloud/30 via-platform/15 to-transparent" />
         </li>
         {siteSections.map((navItem) => {
           const active = activeSection === navItem.id;

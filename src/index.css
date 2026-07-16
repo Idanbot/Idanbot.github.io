@@ -221,8 +221,8 @@
       0 1px 2px rgba(0, 0, 0, 0.25),
       0 12px 32px -10px rgba(0, 0, 0, 0.5),
       0 20px 80px -40px rgba(96, 165, 250, 0.35);
-    backdrop-filter: blur(36px) saturate(2.1);
-    -webkit-backdrop-filter: blur(36px) saturate(2.1);
+    backdrop-filter: blur(20px) saturate(1.65);
+    -webkit-backdrop-filter: blur(20px) saturate(1.65);
     transition: border-color 300ms ease, box-shadow 300ms ease;
   }
 
@@ -251,6 +251,18 @@
       linear-gradient(145deg, rgba(255, 255, 255, 0.075), transparent 28%, rgba(96, 165, 250, 0.038) 74%, transparent);
     opacity: 0.47;
     mix-blend-mode: screen;
+  }
+
+  .hero-section .liquid-glass,
+  .hero-section .liquid-glass-control,
+  nav.liquid-glass {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .hero-section .liquid-glass::before,
+  nav.liquid-glass::before {
+    mix-blend-mode: normal;
   }
 
   .liquid-glass::after {
@@ -282,8 +294,8 @@
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.098),
       0 16px 52px -38px rgba(147, 197, 253, 0.38);
-    backdrop-filter: blur(18px) saturate(1.3);
-    -webkit-backdrop-filter: blur(18px) saturate(1.3);
+    backdrop-filter: blur(12px) saturate(1.25);
+    -webkit-backdrop-filter: blur(12px) saturate(1.25);
   }
 
   .liquid-glass-control:not(.fixed):not(.absolute):not(.sticky) {
@@ -340,7 +352,7 @@
   }
 
   .hero-poster-enhanced {
-    opacity: 0.16;
+    opacity: 0;
   }
 
   .hero-poster::before {
@@ -570,35 +582,6 @@
     }
   }
 
-  @keyframes blob-orbit-1 {
-    0%, 100% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(50px, 15px) scale(1.3); }
-  }
-  @keyframes blob-orbit-2 {
-    0%, 100% { transform: translate(0, 0) scale(1.25); }
-    50% { transform: translate(-50px, -15px) scale(0.85); }
-  }
-  @keyframes blob-orbit-3 {
-    0%, 100% { transform: translate(0, 0) scale(0.9); }
-    50% { transform: translate(-25px, 25px) scale(1.2); }
-  }
-  @keyframes gradient-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-  }
-  .animate-blob-orbit-1 {
-    animation: blob-orbit-1 14s ease-in-out infinite;
-  }
-  .animate-blob-orbit-2 {
-    animation: blob-orbit-2 18s ease-in-out infinite;
-  }
-  .animate-blob-orbit-3 {
-    animation: blob-orbit-3 22s ease-in-out infinite;
-  }
-  .animate-gradient-shift {
-    background-size: 200% 200%;
-    animation: gradient-shift 8s linear infinite;
-  }
 }
 
 

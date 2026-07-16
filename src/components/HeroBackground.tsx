@@ -1,9 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import {
-  createHeroScene,
-  type HeroSceneController,
-  type HeroSceneQuality,
-} from '@/lib/heroScene';
+import type { HeroSceneController, HeroSceneQuality } from '@/lib/heroScene';
 
 type IdleWindow = Window & {
   requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
@@ -38,10 +34,10 @@ export function HeroBackground({
 
     const startScene = async () => {
       try {
-        const THREE = await import('three');
+        const { createHeroScene } = await import('@/lib/heroScene');
         if (cancelled) return;
 
-        controller = createHeroScene(THREE, canvas, quality);
+        controller = createHeroScene(canvas, quality);
         let visible = true;
 
         const resize = () => {
@@ -57,20 +53,10 @@ export function HeroBackground({
         const handleVisibility = () => syncPlayback();
         const supportsPointerParallax = window.matchMedia('(pointer: fine)').matches;
         const handlePointerMove = (event: PointerEvent) => {
-          if (!supportsPointerParallax || !controller) return;
-          const rect = container.getBoundingClientRect();
-          const inside =
-            event.clientX >= rect.left &&
-            event.clientX <= rect.right &&
-            event.clientY >= rect.top &&
-            event.clientY <= rect.bottom;
-          if (!inside) {
-            controller.setPointer(0, 0);
-            return;
-          }
+          if (!supportsPointerParallax || !controller || !visible) return;
           controller.setPointer(
-            (event.clientX - rect.left) / rect.width - 0.5,
-            (event.clientY - rect.top) / rect.height - 0.5
+            event.clientX / Math.max(1, window.innerWidth) - 0.5,
+            event.clientY / Math.max(1, window.innerHeight) - 0.5
           );
         };
         const handleContextLost = (event: Event) => {
@@ -143,12 +129,11 @@ export function HeroBackground({
       <div className={`hero-poster ${rendererReady ? 'hero-poster-enhanced' : ''}`} />
       <canvas
         ref={canvasRef}
-        className={`absolute inset-0 h-full w-full [mask-image:linear-gradient(to_bottom,black_0%,black_82%,transparent_100%)] transition-opacity duration-700 ${
-          rendererReady ? 'opacity-80' : 'opacity-0'
+        className={`absolute inset-0 h-full w-full transition-opacity duration-700 ${
+          rendererReady ? 'opacity-100' : 'opacity-0'
         }`}
       />
       <div className="absolute inset-y-0 left-0 w-[92%] bg-[linear-gradient(90deg,rgba(4,4,5,0.86),rgba(4,4,5,0.62)_62%,transparent)] sm:w-[82%] sm:bg-[linear-gradient(90deg,rgba(4,4,5,0.72),rgba(4,4,5,0.38)_48%,transparent)]" />
-      <div className="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-[var(--background)] via-[var(--background)]/78 to-transparent" />
     </div>
   );
 }

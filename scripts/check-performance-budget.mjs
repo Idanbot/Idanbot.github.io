@@ -22,7 +22,8 @@ const fontDirectory = path.join(distDirectory, 'fonts');
 const fonts = (await readdir(fontDirectory)).map((file) => 'fonts/' + file);
 const assetDirectory = path.join(distDirectory, 'assets');
 const heroSceneAsset = (await readdir(assetDirectory)).find(
-  (file) => file.startsWith('three.') && file.endsWith('.js')
+  (file) =>
+    (file.startsWith('heroScene-') || file.startsWith('three.')) && file.endsWith('.js')
 );
 
 const uniqueJavaScript = [...new Set(initialJavaScript)];
@@ -44,7 +45,7 @@ const budgets = {
   initialJavaScript: 76 * kibibyte,
   css: 18 * kibibyte,
   fonts: 90 * kibibyte,
-  heroSceneJavaScript: 190 * kibibyte,
+  heroSceneJavaScript: 140 * kibibyte,
 };
 
 const failures = Object.entries(budgets)

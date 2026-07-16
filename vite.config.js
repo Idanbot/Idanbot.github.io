@@ -10,27 +10,11 @@ export default defineConfig({
         outDir: 'dist',
         modulePreload: {
             polyfill: false,
-            resolveDependencies(url, deps) {
+            resolveDependencies: function (url, deps) {
                 if (!url.includes('CommandPalette')) {
-                    return deps.filter((dep) => !dep.includes('cmdk'));
+                    return deps.filter(function (dep) { return !dep.includes('cmdk'); });
                 }
                 return deps;
-            },
-        },
-        rollupOptions: {
-            output: {
-                manualChunks(id) {
-                    if (!id.includes('node_modules'))
-                        return;
-                    if (id.includes('framer-motion'))
-                        return 'framer-motion';
-                    if (id.includes('cmdk'))
-                        return 'cmdk';
-                    if (id.includes('lucide-react'))
-                        return 'lucide';
-                    if (id.includes('react-icons'))
-                        return 'react-icons';
-                },
             },
         },
     },

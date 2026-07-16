@@ -9,6 +9,8 @@
     "build": "tsc -b && vite build && node scripts/prerender.js && node scripts/validate-dist.mjs",
     "lint": "eslint . --max-warnings 0",
     "performance:check": "node scripts/check-performance-budget.mjs",
+    "performance:runtime": "node scripts/benchmark-runtime.mjs",
+    "performance:benchmark": "npm run build && npm run performance:check && npm run performance:runtime",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",

@@ -1,5 +1,21 @@
-import type * as Three from 'three';
-import { createHeroFrameClock, frameDamping, HERO_TARGET_FPS } from './heroTiming';
+import {
+  BufferGeometry,
+  Float32BufferAttribute,
+  Group,
+  LineSegments,
+  PerspectiveCamera,
+  Scene,
+  ShaderMaterial,
+  WebGLRenderer,
+  type Material,
+  type Object3D,
+} from 'three';
+import {
+  createHeroFrameClock,
+  frameDamping,
+  getHeroPixelRatio,
+  HERO_TARGET_FPS,
+} from './heroTiming';
 
 export type HeroSceneQuality = 'full' | 'reduced';
 
@@ -12,8 +28,28 @@ export interface HeroSceneController {
 }
 
 type HeroProbeWindow = Window & {
-  __heroFrameProbe?: { frames: number };
+  __heroFrameProbe?: { frames: number; renderMs?: number; maxRenderMs?: number };
 };
+
+function createTerrainGeometry(size: number, segments: number) {
+  const geometry = new BufferGeometry();
+  const vertices: number[] = [];
+  const halfSize = size / 2;
+  const step = size / segments;
+
+  for (let line = 0; line <= segments; line += 1) {
+    const offset = -halfSize + line * step;
+    for (let segment = 0; segment < segments; segment += 1) {
+      const start = -halfSize + segment * step;
+      const end = start + step;
+      vertices.push(start, 0, offset, end, 0, offset);
+      vertices.push(offset, 0, start, offset, 0, end);
+    }
+  }
+
+  geometry.setAttribute('position', new Float32BufferAttribute(vertices, 3));
+  return geometry;
+}
 
 const terrainVertexShader = `
   uniform float uTime;
@@ -37,63 +73,56 @@ const terrainVertexShader = `
 `;
 
 const terrainFragmentShader = `
+  uniform float uViewportHeight;
   varying float vElevation;
 
   void main() {
-    float glow = smoothstep(-0.8, 1.45, vElevation);
-    gl_FragColor = vec4(0.30, 0.68, 1.0, 0.09 + glow * 0.17);
+    float glow = smoothstep(-0.45, 1.1, vElevation);
+    float bottomFade = smoothstep(0.0, 0.18, gl_FragCoord.y / max(uViewportHeight, 1.0));
+    vec3 lineColor = mix(vec3(0.24, 0.58, 0.95), vec3(0.42, 0.76, 1.0), glow);
+    gl_FragColor = vec4(lineColor, (0.068 + glow * 0.15) * bottomFade);
   }
 `;
 
 export function createHeroScene(
-  THREE: typeof import('three'),
   canvas: HTMLCanvasElement,
   quality: HeroSceneQuality
 ): HeroSceneController {
-  const renderer = new THREE.WebGLRenderer({
+  const renderer = new WebGLRenderer({
     canvas,
     alpha: true,
     antialias: false,
     powerPreference: 'high-performance',
+    precision: 'mediump',
   });
   renderer.setClearColor(0x000000, 0);
-  renderer.outputColorSpace = THREE.SRGBColorSpace;
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1;
 
-  const scene = new THREE.Scene();
-  scene.fog = new THREE.FogExp2(0x040405, 0.045);
+  const scene = new Scene();
 
-  const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+  const camera = new PerspectiveCamera(60, 1, 0.1, 100);
   camera.position.set(0, 2, 10);
 
-  const world = new THREE.Group();
+  const world = new Group();
   scene.add(world);
 
-  const segments = quality === 'full' ? 48 : 30;
+  const segments = quality === 'full' ? 40 : 28;
   const terrainSize = 40;
   const cellSize = terrainSize / segments;
-  const terrainGeometry = new THREE.PlaneGeometry(
-    terrainSize,
-    terrainSize,
-    segments,
-    segments
-  );
-  terrainGeometry.rotateX(-Math.PI / 2);
+  const terrainGeometry = createTerrainGeometry(terrainSize, segments);
 
   const terrainUniforms = {
     uTime: { value: 0 },
     uScroll: { value: 0 },
+    uViewportHeight: { value: 1 },
   };
-  const terrainMaterial = new THREE.ShaderMaterial({
+  const terrainMaterial = new ShaderMaterial({
     uniforms: terrainUniforms,
     vertexShader: terrainVertexShader,
     fragmentShader: terrainFragmentShader,
-    wireframe: true,
     transparent: true,
     depthWrite: false,
   });
-  const terrain = new THREE.Mesh(terrainGeometry, terrainMaterial);
+  const terrain = new LineSegments(terrainGeometry, terrainMaterial);
   terrain.position.set(0, -3.1, -10);
   world.add(terrain);
 
@@ -104,12 +133,11 @@ export function createHeroScene(
   let targetPointerX = 0;
   let targetPointerY = 0;
   const frameClock = createHeroFrameClock(HERO_TARGET_FPS[quality]);
-  const maxRenderPixels = quality === 'full' ? 1_800_000 : 1_000_000;
 
   const render = (deltaSeconds = 0) => {
     const scroll = (elapsed * 1.8) % cellSize;
     terrain.position.z = -10 + scroll;
-    terrainUniforms.uTime.value = elapsed;
+    terrainUniforms.uTime.value = elapsed % 2048;
     terrainUniforms.uScroll.value = scroll;
 
     const cameraDamping = frameDamping(1.4, deltaSeconds);
@@ -117,9 +145,15 @@ export function createHeroScene(
     camera.position.y += (2 - targetPointerY * 1.4 - camera.position.y) * cameraDamping;
     camera.lookAt(0, -0.35, -3.5);
 
-    renderer.render(scene, camera);
     const probe = (window as HeroProbeWindow).__heroFrameProbe;
-    if (probe) probe.frames += 1;
+    const renderStartedAt = probe ? performance.now() : 0;
+    renderer.render(scene, camera);
+    if (probe) {
+      const renderMs = performance.now() - renderStartedAt;
+      probe.frames += 1;
+      probe.renderMs = (probe.renderMs ?? 0) + renderMs;
+      probe.maxRenderMs = Math.max(probe.maxRenderMs ?? 0, renderMs);
+    }
   };
 
   const frameLoop = (timestamp: number) => {
@@ -147,14 +181,10 @@ export function createHeroScene(
     resize: (nextWidth, nextHeight, pixelRatio) => {
       width = Math.max(1, Math.round(nextWidth));
       const height = Math.max(1, Math.round(nextHeight));
-      const renderPixelBudget = height > width ? maxRenderPixels * 0.72 : maxRenderPixels;
-      const areaPixelRatio = Math.sqrt(renderPixelBudget / Math.max(1, width * height));
-      const cappedPixelRatio = Math.max(
-        0.4,
-        Math.min(pixelRatio || 1, quality === 'full' ? 1.25 : 1, areaPixelRatio)
-      );
+      const cappedPixelRatio = getHeroPixelRatio(width, height, pixelRatio, quality);
       renderer.setPixelRatio(cappedPixelRatio);
       renderer.setSize(width, height, false);
+      terrainUniforms.uViewportHeight.value = Math.max(1, Math.round(height * cappedPixelRatio));
       camera.aspect = width / height;
       camera.fov = width < 768 ? 68 : 60;
       camera.updateProjectionMatrix();
@@ -168,12 +198,12 @@ export function createHeroScene(
     dispose: () => {
       disposed = true;
       stop();
-      const geometries = new Set<Three.BufferGeometry>();
-      const materials = new Set<Three.Material>();
+      const geometries = new Set<BufferGeometry>();
+      const materials = new Set<Material>();
       scene.traverse((object) => {
-        const drawable = object as Three.Object3D & {
-          geometry?: Three.BufferGeometry;
-          material?: Three.Material | Three.Material[];
+        const drawable = object as Object3D & {
+          geometry?: BufferGeometry;
+          material?: Material | Material[];
         };
         if (drawable.geometry) geometries.add(drawable.geometry);
         if (drawable.material) {

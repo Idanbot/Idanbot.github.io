@@ -129,8 +129,9 @@ function App() {
         <LazyOnVisible
           targetId="skills"
           prefetch={preloadStack}
-          prefetchRootMargin="440px 0px"
-          renderRootMargin="220px 0px"
+          prefetchRootMargin="-16px 0px"
+          renderRootMargin="-96px 0px"
+          fallbackViewportMargin={-96}
           fallback={<SectionSkeleton variant="skills" />}
           isServer={isServer}
         >
@@ -153,8 +154,9 @@ function App() {
           </div>
           <LazyOnVisible
             prefetch={preloadHistory}
-            prefetchRootMargin="480px 0px"
-            renderRootMargin="240px 0px"
+            prefetchRootMargin="160px 0px"
+            renderRootMargin="80px 0px"
+            fallbackViewportMargin={160}
             targetId="history"
             fallback={<SectionSkeleton variant="history" />}
             isServer={isServer}
@@ -168,8 +170,9 @@ function App() {
         <section id="monitor" className="cv-monitor min-h-[760px] scroll-mt-24 snap-start md:min-h-[840px]">
           <LazyOnVisible
             prefetch={preloadStatus}
-            prefetchRootMargin="480px 0px"
-            renderRootMargin="240px 0px"
+            prefetchRootMargin="200px 0px"
+            renderRootMargin="100px 0px"
+            fallbackViewportMargin={200}
             targetId="monitor"
             fallback={<SectionSkeleton variant="monitor" />}
             isServer={isServer}
