@@ -11,8 +11,10 @@ import {
   type Object3D,
 } from 'three';
 import {
+  createAdaptivePixelRatioController,
   createHeroFrameClock,
   frameDamping,
+  getHeroMaxPixelRatio,
   getHeroPixelRatio,
   HERO_TARGET_FPS,
 } from './heroTiming';
@@ -132,7 +134,15 @@ export function createHeroScene(
   let disposed = false;
   let targetPointerX = 0;
   let targetPointerY = 0;
+  let renderHeight = 1;
+  let adaptiveResolution = createAdaptivePixelRatioController(1, 1);
   const frameClock = createHeroFrameClock(HERO_TARGET_FPS[quality]);
+
+  const applyPixelRatio = (pixelRatio: number) => {
+    renderer.setPixelRatio(pixelRatio);
+    renderer.setSize(width, renderHeight, false);
+    terrainUniforms.uViewportHeight.value = Math.max(1, Math.round(renderHeight * pixelRatio));
+  };
 
   const render = (deltaSeconds = 0) => {
     const scroll = (elapsed * 1.8) % cellSize;
@@ -154,6 +164,9 @@ export function createHeroScene(
       probe.renderMs = (probe.renderMs ?? 0) + renderMs;
       probe.maxRenderMs = Math.max(probe.maxRenderMs ?? 0, renderMs);
     }
+
+    const nextPixelRatio = adaptiveResolution.recordFrame(deltaSeconds);
+    if (nextPixelRatio !== null) applyPixelRatio(nextPixelRatio);
   };
 
   const frameLoop = (timestamp: number) => {
@@ -180,12 +193,20 @@ export function createHeroScene(
     stop,
     resize: (nextWidth, nextHeight, pixelRatio) => {
       width = Math.max(1, Math.round(nextWidth));
-      const height = Math.max(1, Math.round(nextHeight));
-      const cappedPixelRatio = getHeroPixelRatio(width, height, pixelRatio, quality);
-      renderer.setPixelRatio(cappedPixelRatio);
-      renderer.setSize(width, height, false);
-      terrainUniforms.uViewportHeight.value = Math.max(1, Math.round(height * cappedPixelRatio));
-      camera.aspect = width / height;
+      renderHeight = Math.max(1, Math.round(nextHeight));
+      const initialPixelRatio = getHeroPixelRatio(width, renderHeight, pixelRatio, quality);
+      const maximumPixelRatio = getHeroMaxPixelRatio(
+        width,
+        renderHeight,
+        pixelRatio,
+        quality
+      );
+      adaptiveResolution = createAdaptivePixelRatioController(
+        initialPixelRatio,
+        maximumPixelRatio
+      );
+      applyPixelRatio(initialPixelRatio);
+      camera.aspect = width / renderHeight;
       camera.fov = width < 768 ? 68 : 60;
       camera.updateProjectionMatrix();
       world.position.y = width < 768 ? 0.8 : 0;

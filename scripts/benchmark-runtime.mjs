@@ -6,8 +6,10 @@ import { preview } from 'vite';
 const headed = process.env.PERF_HEADED === '1';
 const durationMs = 3_000;
 const viewports = [
-  { name: '1080p', width: 1920, height: 1080, deviceScaleFactor: 1 },
   { name: 'S23', width: 360, height: 780, deviceScaleFactor: 3 },
+  { name: '1080p', width: 1920, height: 1080, deviceScaleFactor: 1 },
+  { name: '1440p', width: 2560, height: 1440, deviceScaleFactor: 1 },
+  { name: '4K', width: 3840, height: 2160, deviceScaleFactor: 1 },
 ];
 
 const server = await preview({
@@ -55,8 +57,27 @@ try {
 
     await page.goto(url, { waitUntil: 'load' });
     await page.waitForSelector('[data-hero-renderer="webgl"]', { timeout: 10_000 });
-    // Exclude one-time shader compilation and the poster-to-canvas crossfade.
-    await page.waitForTimeout(1_000);
+    // Wait through warmup and until adaptive resolution has stopped changing.
+    await page.evaluate(async () => {
+      const startedAt = performance.now();
+      const deadline = startedAt + 25_000;
+      let previousSize = '';
+      let stableSince = startedAt;
+
+      while (performance.now() < deadline) {
+        const canvas = document.querySelector('canvas');
+        const size = canvas ? `${canvas.width}x${canvas.height}` : '';
+        if (size !== previousSize) {
+          previousSize = size;
+          stableSince = performance.now();
+        }
+
+        if (performance.now() - startedAt >= 2_000 && performance.now() - stableSince >= 1_500) {
+          return;
+        }
+        await new Promise((resolve) => window.setTimeout(resolve, 250));
+      }
+    });
 
     const result = await page.evaluate(
       (sampleDuration) =>
@@ -100,8 +121,11 @@ try {
         }),
       durationMs
     );
-
     results.push({ viewport: viewport.name, ...result });
+    console.log(
+      `${viewport.name}: ${result.sceneFps.toFixed(1)} FPS, ${result.canvas}, ` +
+        `${result.averageRenderMs.toFixed(2)}ms average render submission`
+    );
     await context.close();
   }
 } finally {
@@ -128,11 +152,21 @@ console.table(
 
 const failures = results.flatMap((result) => {
   const viewportFailures = [];
+  const tallViewportLoadsNextSection = result.viewport === '4K';
+  const transferBudget = tallViewportLoadsNextSection ? 380 : 320;
+  const requestBudget = tallViewportLoadsNextSection ? 12 : 6;
+  const elementBudget = tallViewportLoadsNextSection ? 850 : 200;
   if (result.averageRenderMs > 2) viewportFailures.push('average render submission exceeds 2ms');
   if (result.maxRenderMs > 8) viewportFailures.push('maximum render submission exceeds 8ms');
-  if (result.transferKiB > 320) viewportFailures.push('initial transfer exceeds 320 KiB');
-  if (result.requests > 6) viewportFailures.push('initial request count exceeds 6');
-  if (result.elements > 200) viewportFailures.push('initial DOM exceeds 200 elements');
+  if (result.transferKiB > transferBudget) {
+    viewportFailures.push(`initial transfer exceeds ${transferBudget} KiB`);
+  }
+  if (result.requests > requestBudget) {
+    viewportFailures.push(`initial request count exceeds ${requestBudget}`);
+  }
+  if (result.elements > elementBudget) {
+    viewportFailures.push(`initial DOM exceeds ${elementBudget} elements`);
+  }
   if (result.cls > 0.01) viewportFailures.push('CLS exceeds 0.01');
   if (headed && result.sceneFps < 55) viewportFailures.push('headed scene rate is below 55 FPS');
   return viewportFailures.map((failure) => `${result.viewport}: ${failure}`);
