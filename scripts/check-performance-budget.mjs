@@ -15,9 +15,10 @@ const initialJavaScript = [
   ...index.matchAll(/<script[^>]+src="\/(assets\/[^"]+\.js)"/g),
   ...index.matchAll(/<link[^>]+rel="modulepreload"[^>]+href="\/(assets\/[^"]+\.js)"/g),
 ].map((match) => match[1]);
-const initialStyles = [...index.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="\/(assets\/[^"]+\.css)"/g)].map(
-  (match) => match[1]
-);
+const initialStyles = [
+  ...index.matchAll(/<link[^>]+rel="stylesheet"[^>]+href="\/(assets\/[^"]+\.css)"/g),
+  ...index.matchAll(/<style[^>]+data-inlined-css="\/(assets\/[^"]+\.css)"/g),
+].map((match) => match[1]);
 const fontDirectory = path.join(distDirectory, 'fonts');
 const fonts = (await readdir(fontDirectory)).map((file) => 'fonts/' + file);
 const assetDirectory = path.join(distDirectory, 'assets');

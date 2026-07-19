@@ -48,11 +48,13 @@ async function checkDeployment() {
     throw new Error(`module returned disallowed MIME type ${scriptType || '(missing)'}`);
   }
 
-  const stylesheetSource = extractAttribute(
-    html,
-    /<link\b(?=[^>]*\brel=["']stylesheet["'])[^>]*>/i,
-    'href'
-  );
+  const stylesheetSource =
+    extractAttribute(html, /<link\b(?=[^>]*\brel=["']stylesheet["'])[^>]*>/i, 'href') ??
+    extractAttribute(
+      html,
+      /<style\b(?=[^>]*\bdata-inlined-css=["'])[^>]*>/i,
+      'data-inlined-css'
+    );
   if (!stylesheetSource) throw new Error('deployed stylesheet is missing');
   const stylesheetResponse = await fetch(new URL(stylesheetSource, pageResponse.url));
   const stylesheetType = stylesheetResponse.headers.get('content-type')?.split(';', 1)[0].trim();

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { HeroSceneController, HeroSceneQuality } from '@/lib/heroScene';
+import { hasHardwareAcceleratedWebGL } from '@/lib/webglCapability';
 
 type IdleWindow = Window & {
   requestIdleCallback?: (callback: () => void, options?: { timeout?: number }) => number;
@@ -34,6 +35,9 @@ export function HeroBackground({
 
     const startScene = async () => {
       try {
+        // Software rasterizers make the scene pure main-thread jank; keep the poster.
+        if (!hasHardwareAcceleratedWebGL()) return;
+
         const { createHeroScene } = await import('@/lib/heroScene');
         if (cancelled) return;
 

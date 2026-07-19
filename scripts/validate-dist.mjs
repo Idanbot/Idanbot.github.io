@@ -54,7 +54,11 @@ const stylesheets = findElements(
     node.tagName === 'link' &&
     getAttribute(node, 'rel')?.split(/\s+/).includes('stylesheet')
 );
-assert(stylesheets.length >= 1, 'expected at least one stylesheet');
+const inlinedStyles = findElements(
+  document,
+  (node) => node.tagName === 'style' && Boolean(getAttribute(node, 'data-inlined-css'))
+);
+assert(stylesheets.length + inlinedStyles.length >= 1, 'expected at least one stylesheet');
 
 const localAssets = [];
 for (const script of moduleScripts) {
@@ -65,6 +69,11 @@ for (const script of moduleScripts) {
 for (const stylesheet of stylesheets) {
   const source = getAttribute(stylesheet, 'href') ?? '';
   assert(/^\/assets\/[\w.-]+-[A-Za-z0-9_-]{8,}\.css$/.test(source), `stylesheet is not a hashed asset: ${source}`);
+  if (source.startsWith('/')) localAssets.push(source.slice(1));
+}
+for (const style of inlinedStyles) {
+  const source = getAttribute(style, 'data-inlined-css') ?? '';
+  assert(/^\/assets\/[\w.-]+-[A-Za-z0-9_-]{8,}\.css$/.test(source), `inlined stylesheet is not a hashed asset: ${source}`);
   if (source.startsWith('/')) localAssets.push(source.slice(1));
 }
 await Promise.all(localAssets.map((asset) => assertFile(asset, 'referenced asset')));

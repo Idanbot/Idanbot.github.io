@@ -36,6 +36,30 @@ async function enableFullRenderer(page: Page) {
   await page.addInitScript(() => {
     Object.defineProperty(navigator, 'hardwareConcurrency', { configurable: true, get: () => 8 });
     Object.defineProperty(navigator, 'deviceMemory', { configurable: true, get: () => 8 });
+
+    // Headless CI runs WebGL through SwiftShader; spoof a hardware renderer so the
+    // software-rasterizer fallback stays off and the real scene is exercised.
+    const UNMASKED_VENDOR_WEBGL = 0x9245;
+    const UNMASKED_RENDERER_WEBGL = 0x9246;
+    for (const proto of [
+      (window as unknown as { WebGLRenderingContext?: { prototype: object } })
+        .WebGLRenderingContext?.prototype,
+      (window as unknown as { WebGL2RenderingContext?: { prototype: object } })
+        .WebGL2RenderingContext?.prototype,
+    ]) {
+      if (!proto) continue;
+      const contextProto = proto as {
+        getParameter: (pname: number) => unknown;
+      };
+      const originalGetParameter = contextProto.getParameter;
+      contextProto.getParameter = function (pname: number) {
+        if (pname === UNMASKED_RENDERER_WEBGL) {
+          return 'ANGLE (NVIDIA, NVIDIA GeForce RTX 3080, OpenGL 4.5)';
+        }
+        if (pname === UNMASKED_VENDOR_WEBGL) return 'Google Inc. (NVIDIA)';
+        return originalGetParameter.call(this, pname);
+      };
+    }
   });
 }
 

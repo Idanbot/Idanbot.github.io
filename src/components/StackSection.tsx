@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import type { IconType } from 'react-icons';
 import {
   SiAmazonwebservices,
@@ -27,13 +28,11 @@ import {
   SiTerraform,
   SiTypescript,
 } from 'react-icons/si';
-import { m } from 'framer-motion';
 import { Award, ExternalLink, Layers, PauseCircle } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
 import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { profile } from '@/data/profile';
-import { MotionBoundary } from './MotionBoundary';
 
 const stacks: { name: string; category: string; Icon: IconType }[] = [
   { name: 'Kubernetes', category: 'Platform', Icon: SiKubernetes },
@@ -88,9 +87,20 @@ const categoryAccent = (category: string) => {
 
 type StackSectionProps = { className?: string };
 
-const StackSectionContent = ({ className }: StackSectionProps) => {
+export const StackSection = ({ className }: StackSectionProps) => {
   const prefersReducedMotion = usePrefersReducedMotion();
-  const marqueeStacks = prefersReducedMotion ? stacks : [...stacks, ...stacks];
+  // Marquee loop clones render only when idle after hydration: keeps the
+  // prerendered DOM small and the clone re-render out of the critical window.
+  const [marqueeReady, setMarqueeReady] = useState(false);
+  useEffect(() => {
+    if (typeof window.requestIdleCallback === 'function') {
+      const handle = window.requestIdleCallback(() => setMarqueeReady(true));
+      return () => window.cancelIdleCallback(handle);
+    }
+    const timeout = window.setTimeout(() => setMarqueeReady(true), 200);
+    return () => window.clearTimeout(timeout);
+  }, []);
+  const marqueeStacks = prefersReducedMotion || !marqueeReady ? stacks : [...stacks, ...stacks];
 
   return (
     <section
@@ -98,13 +108,7 @@ const StackSectionContent = ({ className }: StackSectionProps) => {
       className={`site-content-width mx-auto border-t border-white/5 px-4 py-14 sm:px-6 md:py-20 snap-start ${className ?? ''}`}
       aria-labelledby="skills-heading"
     >
-      <m.div
-        initial={false}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={prefersReducedMotion ? { duration: 0 } : undefined}
-        viewport={{ once: true, margin: '-80px' }}
-        className="mb-8 text-center md:mb-10"
-      >
+      <div className="mb-8 text-center md:mb-10">
         <div className="mb-3 inline-flex items-center justify-center gap-2 text-cloud/90">
           <Layers
             className="size-7 motion-safe:animate-pulse motion-reduce:animate-none"
@@ -127,7 +131,7 @@ const StackSectionContent = ({ className }: StackSectionProps) => {
             </span>
           ))}
         </div>
-      </m.div>
+      </div>
 
       <div
         className={
@@ -145,29 +149,16 @@ const StackSectionContent = ({ className }: StackSectionProps) => {
           className="pointer-events-none absolute inset-y-0 right-0 z-[1] w-12 bg-gradient-to-l from-[var(--background)] to-transparent"
           aria-hidden
         />
-        <m.ul
+        <ul
           className={`m-0 flex h-[122px] list-none flex-nowrap items-stretch gap-3 px-1 py-2 md:h-[132px] md:gap-4 ${prefersReducedMotion ? '' : 'stack-marquee'}`}
           aria-describedby={!prefersReducedMotion ? 'stack-inspect-hint' : undefined}
         >
         {marqueeStacks.map((item, index) => {
           const Icon = item.Icon;
           return (
-            <m.li
+            <li
               key={`${item.name}-${index}`}
               aria-hidden={!prefersReducedMotion && index >= stacks.length}
-              initial={false}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true, margin: '-40px' }}
-              transition={
-                prefersReducedMotion
-                  ? { duration: 0 }
-                  : {
-                      delay: Math.min((index % stacks.length) * 0.03, 0.36),
-                      type: 'spring',
-                      stiffness: 380,
-                      damping: 26,
-                    }
-              }
               tabIndex={!prefersReducedMotion && index < stacks.length ? 0 : -1}
               aria-label={`${item.name}, ${item.category}`}
               className="list-none shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--stack-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
@@ -191,10 +182,10 @@ const StackSectionContent = ({ className }: StackSectionProps) => {
                   </div>
                 </CardContent>
               </Card>
-            </m.li>
+            </li>
           );
         })}
-        </m.ul>
+        </ul>
         {!prefersReducedMotion ? (
           <div
             id="stack-inspect-hint"
@@ -206,13 +197,7 @@ const StackSectionContent = ({ className }: StackSectionProps) => {
         ) : null}
       </div>
 
-      <m.div
-        initial={false}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={prefersReducedMotion ? { duration: 0 } : undefined}
-        viewport={{ once: true, margin: '-60px' }}
-        className="mx-auto mt-6 max-w-2xl md:mt-8"
-      >
+      <div className="mx-auto mt-6 max-w-2xl md:mt-8">
         <Card className="premium-card border-white/10 bg-card/50 text-left transition-colors hover:border-cloud/30 hover:bg-white/[0.045]">
           <CardContent className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:gap-4">
             <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white/[0.07] ring-1 ring-white/10">
@@ -242,13 +227,7 @@ const StackSectionContent = ({ className }: StackSectionProps) => {
             </div>
           </CardContent>
         </Card>
-      </m.div>
+      </div>
     </section>
   );
 };
-
-export const StackSection = (props: StackSectionProps) => (
-  <MotionBoundary>
-    <StackSectionContent {...props} />
-  </MotionBoundary>
-);

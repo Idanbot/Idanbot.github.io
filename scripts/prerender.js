@@ -37,6 +37,19 @@ async function main() {
     html = html.replace(rootMarker, `<div id="root">${appHtml}</div>`);
     if (html.includes(rootMarker)) throw new Error('Empty root marker remained after prerendering');
 
+    console.log('Inlining critical CSS...');
+    const stylesheetLinkPattern = /<link rel="stylesheet"[^>]*href="\/(assets\/[^"]+\.css)"[^>]*>/;
+    const stylesheetMatch = html.match(stylesheetLinkPattern);
+    if (stylesheetMatch) {
+      const cssPath = path.resolve(root, 'dist', stylesheetMatch[1]);
+      const css = fs.readFileSync(cssPath, 'utf-8');
+      if (css.includes('</style>')) throw new Error('CSS contains </style>; cannot inline safely');
+      html = html.replace(
+        stylesheetMatch[0],
+        `<style data-inlined-css="/${stylesheetMatch[1]}">${css}</style>`
+      );
+    }
+
     console.log('Writing back to dist/index.html...');
     fs.writeFileSync(templatePath, html, 'utf-8');
 

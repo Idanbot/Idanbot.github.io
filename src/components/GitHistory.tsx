@@ -1,14 +1,9 @@
-import { m } from 'framer-motion';
 import { Building2, CalendarDays, GitBranch, Inbox, Tag } from 'lucide-react';
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { profile } from '@/data/profile';
-import { MotionBoundary } from './MotionBoundary';
 
 const commits = [...profile.experience];
 
-const GitHistoryContent = () => {
-  const prefersReducedMotion = usePrefersReducedMotion();
-
+export const GitHistory = () => {
   if (commits.length === 0) {
     return (
       <div
@@ -53,14 +48,8 @@ const GitHistoryContent = () => {
       </div>
 
       <div className="relative ml-3 space-y-10 border-l-2 border-border sm:space-y-12">
-        {commits.map((commit, index) => (
-          <m.div
-            key={commit.hash}
-            initial={false}
-            whileInView={{ opacity: 1, x: 0 }}
-            transition={prefersReducedMotion ? { duration: 0 } : { delay: index * 0.08 }}
-            className="relative pl-6 sm:pl-8"
-          >
+        {commits.map((commit) => (
+          <div key={commit.hash} className="relative pl-6 sm:pl-8">
             <div
               className={`absolute -left-[9px] top-1 size-4 rounded-full ${nodeClass(commit.type)}`}
               aria-hidden
@@ -106,7 +95,7 @@ const GitHistoryContent = () => {
                 ))}
               </ul>
             </article>
-          </m.div>
+          </div>
         ))}
 
         <div className="relative pl-8 pt-4">
@@ -120,9 +109,3 @@ const GitHistoryContent = () => {
     </div>
   );
 };
-
-export const GitHistory = () => (
-  <MotionBoundary>
-    <GitHistoryContent />
-  </MotionBoundary>
-);
