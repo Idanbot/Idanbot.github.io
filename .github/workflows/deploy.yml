@@ -98,7 +98,7 @@ jobs:
         run: node scripts/check-deployment.mjs "${{ steps.deployment.outputs.page_url }}"
 
       - name: Lighthouse CI audit
-        uses: treosh/lighthouse-ci-action@0bab7a6e3760f2b43c16d49c35c7aad4c9f67143 # v12
+        uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12
         with:
           urls: ${{ steps.deployment.outputs.page_url }}
           budgetPath: ./lighthouse-budget.json
