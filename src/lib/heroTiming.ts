@@ -3,96 +3,67 @@ export const HERO_TARGET_FPS = {
   reduced: 30,
 } as const;
 
-export const HERO_RENDER_PIXEL_BUDGET = {
-  full: 520_000,
-  reduced: 240_000,
+export const HERO_RESOLUTION_TIERS = {
+  '480p': { width: 854, height: 480 },
+  '720p': { width: 1280, height: 720 },
+  '1080p': { width: 1920, height: 1080 },
+  '1440p': { width: 2560, height: 1440 },
+  '4k': { width: 3840, height: 2160 },
 } as const;
 
-const HERO_REFERENCE_AREA = 1920 * 1080;
-const HERO_MAX_FULL_PIXEL_BUDGET = 1_050_000;
-export const HERO_MAX_CANVAS_LONG_EDGE = 3840;
-export const HERO_MAX_CANVAS_SHORT_EDGE = 2160;
-const ADAPTIVE_WARMUP_FRAMES = 60;
-const ADAPTIVE_SAMPLE_FRAMES = 30;
-const ADAPTIVE_RATIO_STEP = 1.01;
-const ADAPTIVE_RATIO_EPSILON = 0.0005;
-const ADAPTIVE_CLIMB_FPS = 58;
-const ADAPTIVE_FLOOR_FPS = 55;
+export type HeroResolutionTier = keyof typeof HERO_RESOLUTION_TIERS;
 
-export function getHeroRenderPixelBudget(
+export const HERO_INITIAL_RESOLUTION_TIER: HeroResolutionTier = '1080p';
+const HERO_RESOLUTION_TIER_ORDER: HeroResolutionTier[] = [
+  '480p',
+  '720p',
+  '1080p',
+  '1440p',
+  '4k',
+];
+const HERO_FPS_SAMPLE_SECONDS = 5;
+const HERO_FPS_WARMUP_SECONDS = 1;
+const HERO_UPSCALE_FPS = 58.5;
+const HERO_HIGH_TIER_FLOOR_FPS = 55;
+const HERO_PIXEL_RATIO_STEP = 0.01;
+const HERO_FAILED_TIER_COOLDOWN_WINDOWS = 6;
+
+export function getHeroTierPixelRatio(
   width: number,
   height: number,
-  quality: keyof typeof HERO_RENDER_PIXEL_BUDGET
+  tier: HeroResolutionTier
 ) {
   const safeWidth = Math.max(1, width);
   const safeHeight = Math.max(1, height);
-  const narrowPortraitMultiplier = safeHeight > safeWidth && safeWidth < 768 ? 0.82 : 1;
-
-  if (quality === 'reduced') {
-    return HERO_RENDER_PIXEL_BUDGET.reduced * narrowPortraitMultiplier;
-  }
-
-  const viewportScale = Math.max(
-    1,
-    Math.sqrt((safeWidth * safeHeight) / HERO_REFERENCE_AREA)
-  );
-  return (
-    Math.min(HERO_RENDER_PIXEL_BUDGET.full * viewportScale, HERO_MAX_FULL_PIXEL_BUDGET) *
-    narrowPortraitMultiplier
-  );
-}
-
-export function getHeroPixelRatio(
-  width: number,
-  height: number,
-  devicePixelRatio: number,
-  quality: keyof typeof HERO_RENDER_PIXEL_BUDGET
-) {
-  const safeWidth = Math.max(1, width);
-  const safeHeight = Math.max(1, height);
-  const pixelBudget = getHeroRenderPixelBudget(safeWidth, safeHeight, quality);
-  const budgetRatio = Math.sqrt(pixelBudget / (safeWidth * safeHeight));
-  const qualityCap = quality === 'full' ? 1.25 : 0.85;
-
-  return Math.max(0.2, Math.min(devicePixelRatio || 1, qualityCap, budgetRatio));
-}
-
-export function getHeroMaxPixelRatio(
-  width: number,
-  height: number,
-  devicePixelRatio: number,
-  quality: keyof typeof HERO_RENDER_PIXEL_BUDGET
-) {
-  if (quality === 'reduced') {
-    return getHeroPixelRatio(width, height, devicePixelRatio, quality);
-  }
-
-  const safeWidth = Math.max(1, width);
-  const safeHeight = Math.max(1, height);
+  const target = HERO_RESOLUTION_TIERS[tier];
   const landscape = safeWidth >= safeHeight;
-  const maximumWidth = landscape ? HERO_MAX_CANVAS_LONG_EDGE : HERO_MAX_CANVAS_SHORT_EDGE;
-  const maximumHeight = landscape ? HERO_MAX_CANVAS_SHORT_EDGE : HERO_MAX_CANVAS_LONG_EDGE;
-  const canvasRatio = Math.min(maximumWidth / safeWidth, maximumHeight / safeHeight);
+  const targetWidth = landscape ? target.width : target.height;
+  const targetHeight = landscape ? target.height : target.width;
 
-  return Math.max(
-    getHeroPixelRatio(width, height, devicePixelRatio, quality),
-    canvasRatio
-  );
+  return Math.min(targetWidth / safeWidth, targetHeight / safeHeight);
 }
 
-export interface AdaptivePixelRatioController {
-  recordFrame: (deltaSeconds: number) => number | null;
-  getPixelRatio: () => number;
+export function approachHeroPixelRatio(current: number, target: number) {
+  if (current === target) return target;
+  const maximumChange = Math.max(0.001, current * HERO_PIXEL_RATIO_STEP);
+  if (Math.abs(target - current) <= maximumChange) return target;
+  return current + Math.sign(target - current) * maximumChange;
 }
 
-export function createAdaptivePixelRatioController(
-  initialPixelRatio: number,
-  maximumPixelRatio: number
-): AdaptivePixelRatioController {
-  let currentRatio = initialPixelRatio;
-  let stableRatio = initialPixelRatio;
-  let ceilingRatio = Math.max(initialPixelRatio, maximumPixelRatio);
-  let warmupFrames = 0;
+export interface AdaptiveResolutionController {
+  recordFrame: (deltaSeconds: number, transitioning?: boolean) => HeroResolutionTier | null;
+  getTier: () => HeroResolutionTier;
+  isSettled: () => boolean;
+}
+
+export function createAdaptiveResolutionController(
+  initialTier: HeroResolutionTier = HERO_INITIAL_RESOLUTION_TIER
+): AdaptiveResolutionController {
+  let currentTier = initialTier;
+  let blockedTierIndex: number | null = null;
+  let blockedWindows = 0;
+  let settled = false;
+  let warmupSeconds = 0;
   let sampleFrames = 0;
   let sampleSeconds = 0;
 
@@ -102,45 +73,62 @@ export function createAdaptivePixelRatioController(
   };
 
   return {
-    recordFrame(deltaSeconds) {
-      if (warmupFrames < ADAPTIVE_WARMUP_FRAMES) {
-        warmupFrames += 1;
+    recordFrame(deltaSeconds, transitioning = false) {
+      if (transitioning) {
+        resetSample();
+        return null;
+      }
+      if (deltaSeconds <= 0) return null;
+      if (warmupSeconds < HERO_FPS_WARMUP_SECONDS) {
+        warmupSeconds += deltaSeconds;
         return null;
       }
 
       sampleFrames += 1;
       sampleSeconds += Math.max(0, deltaSeconds);
-      if (sampleFrames < ADAPTIVE_SAMPLE_FRAMES) return null;
+      if (sampleSeconds < HERO_FPS_SAMPLE_SECONDS) return null;
 
-      const sampledFps = sampleSeconds > 0 ? sampleFrames / sampleSeconds : 60;
+      const averageFps = sampleFrames / sampleSeconds;
       resetSample();
+      const currentIndex = HERO_RESOLUTION_TIER_ORDER.indexOf(currentTier);
+      let nextTier = currentTier;
+      if (blockedWindows > 0) blockedWindows -= 1;
+      if (blockedWindows === 0) blockedTierIndex = null;
 
-      if (sampledFps >= ADAPTIVE_CLIMB_FPS) {
-        stableRatio = currentRatio;
-        const nextRatio = Math.min(ceilingRatio, currentRatio * ADAPTIVE_RATIO_STEP);
-        if (nextRatio <= currentRatio + ADAPTIVE_RATIO_EPSILON) return null;
-        currentRatio = nextRatio;
-        return currentRatio;
+      const blockCurrentTier = () => {
+        blockedTierIndex = currentIndex;
+        blockedWindows = HERO_FAILED_TIER_COOLDOWN_WINDOWS;
+      };
+
+      if (averageFps < 15) {
+        nextTier = '480p';
+        if (currentIndex > 0) blockCurrentTier();
+        settled = true;
+      } else if (averageFps < 30) {
+        nextTier = '720p';
+        if (currentIndex > 1) blockCurrentTier();
+        settled = true;
+      } else if (currentIndex > 2 && averageFps < HERO_HIGH_TIER_FLOOR_FPS) {
+        nextTier = HERO_RESOLUTION_TIER_ORDER[currentIndex - 1];
+        blockCurrentTier();
+        settled = true;
+      } else if (
+        averageFps >= HERO_UPSCALE_FPS &&
+        currentIndex < HERO_RESOLUTION_TIER_ORDER.length - 1 &&
+        blockedTierIndex !== currentIndex + 1
+      ) {
+        nextTier = HERO_RESOLUTION_TIER_ORDER[currentIndex + 1];
+        settled = false;
+      } else {
+        settled = true;
       }
 
-      if (sampledFps >= ADAPTIVE_FLOOR_FPS) {
-        stableRatio = currentRatio;
-        ceilingRatio = currentRatio;
-        return null;
-      }
-
-      if (currentRatio > stableRatio + ADAPTIVE_RATIO_EPSILON) {
-        ceilingRatio = stableRatio;
-        currentRatio = stableRatio;
-        return currentRatio;
-      }
-
-      currentRatio = Math.max(0.2, currentRatio / ADAPTIVE_RATIO_STEP);
-      stableRatio = currentRatio;
-      ceilingRatio = currentRatio;
-      return currentRatio;
+      if (nextTier === currentTier) return null;
+      currentTier = nextTier;
+      return currentTier;
     },
-    getPixelRatio: () => currentRatio,
+    getTier: () => currentTier,
+    isSettled: () => settled,
   };
 }
 
@@ -166,7 +154,7 @@ export function createHeroFrameClock(targetFps: number): HeroFrameClock {
       // A small tolerance absorbs RAF timestamp jitter without quantizing high-refresh displays.
       if (accumulatedMs < frameInterval - 0.5) return null;
 
-      const deltaSeconds = Math.min(accumulatedMs / 1000, 0.05);
+      const deltaSeconds = Math.min(accumulatedMs / 1000, 0.25);
       accumulatedMs = Math.max(0, accumulatedMs - frameInterval);
       if (accumulatedMs > frameInterval) accumulatedMs %= frameInterval;
       return deltaSeconds;

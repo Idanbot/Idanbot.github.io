@@ -57,27 +57,12 @@ try {
 
     await page.goto(url, { waitUntil: 'load' });
     await page.waitForSelector('[data-hero-renderer="webgl"]', { timeout: 10_000 });
-    // Wait through warmup and until adaptive resolution has stopped changing.
-    await page.evaluate(async () => {
-      const startedAt = performance.now();
-      const deadline = startedAt + 25_000;
-      let previousSize = '';
-      let stableSince = startedAt;
-
-      while (performance.now() < deadline) {
-        const canvas = document.querySelector('canvas');
-        const size = canvas ? `${canvas.width}x${canvas.height}` : '';
-        if (size !== previousSize) {
-          previousSize = size;
-          stableSince = performance.now();
-        }
-
-        if (performance.now() - startedAt >= 2_000 && performance.now() - stableSince >= 1_500) {
-          return;
-        }
-        await new Promise((resolve) => window.setTimeout(resolve, 250));
-      }
-    });
+    await page.waitForFunction(
+      () => document.querySelector('#hero canvas')?.dataset.heroResolutionSettled === 'true',
+      undefined,
+      { timeout: 25_000 }
+    );
+    await page.waitForTimeout(500);
 
     const result = await page.evaluate(
       (sampleDuration) =>
@@ -114,6 +99,7 @@ try {
               ),
               longTasks: window.__runtimeBenchmark.longTasks.length,
               canvas: canvas ? `${canvas.width}x${canvas.height}` : 'missing',
+              tier: canvas?.dataset.heroResolutionTier ?? 'missing',
             });
           };
 
@@ -123,7 +109,7 @@ try {
     );
     results.push({ viewport: viewport.name, ...result });
     console.log(
-      `${viewport.name}: ${result.sceneFps.toFixed(1)} FPS, ${result.canvas}, ` +
+      `${viewport.name}: ${result.sceneFps.toFixed(1)} FPS, ${result.tier} (${result.canvas}), ` +
         `${result.averageRenderMs.toFixed(2)}ms average render submission`
     );
     await context.close();
@@ -146,6 +132,7 @@ console.table(
     elements: result.elements,
     cls: result.cls.toFixed(3),
     longTasks: result.longTasks,
+    tier: result.tier,
     canvas: result.canvas,
   }))
 );

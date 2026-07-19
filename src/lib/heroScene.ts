@@ -11,12 +11,14 @@ import {
   type Object3D,
 } from 'three';
 import {
-  createAdaptivePixelRatioController,
+  approachHeroPixelRatio,
+  createAdaptiveResolutionController,
   createHeroFrameClock,
   frameDamping,
-  getHeroMaxPixelRatio,
-  getHeroPixelRatio,
+  getHeroTierPixelRatio,
+  HERO_INITIAL_RESOLUTION_TIER,
   HERO_TARGET_FPS,
+  type HeroResolutionTier,
 } from './heroTiming';
 
 export type HeroSceneQuality = 'full' | 'reduced';
@@ -135,7 +137,11 @@ export function createHeroScene(
   let targetPointerX = 0;
   let targetPointerY = 0;
   let renderHeight = 1;
-  let adaptiveResolution = createAdaptivePixelRatioController(1, 1);
+  let resolutionTier: HeroResolutionTier =
+    quality === 'full' ? HERO_INITIAL_RESOLUTION_TIER : '480p';
+  let currentPixelRatio = 1;
+  let targetPixelRatio = 1;
+  let adaptiveResolution = createAdaptiveResolutionController(resolutionTier);
   const frameClock = createHeroFrameClock(HERO_TARGET_FPS[quality]);
 
   const applyPixelRatio = (pixelRatio: number) => {
@@ -145,6 +151,26 @@ export function createHeroScene(
   };
 
   const render = (deltaSeconds = 0) => {
+    const nextPixelRatio = approachHeroPixelRatio(currentPixelRatio, targetPixelRatio);
+    if (nextPixelRatio !== currentPixelRatio) {
+      currentPixelRatio = nextPixelRatio;
+      applyPixelRatio(currentPixelRatio);
+    }
+
+    const transitioning = currentPixelRatio !== targetPixelRatio;
+    const nextTier =
+      quality === 'full'
+        ? adaptiveResolution.recordFrame(deltaSeconds, transitioning)
+        : null;
+    if (nextTier !== null) {
+      resolutionTier = nextTier;
+      targetPixelRatio = getHeroTierPixelRatio(width, renderHeight, resolutionTier);
+    }
+    canvas.dataset.heroResolutionTier = resolutionTier;
+    canvas.dataset.heroResolutionSettled = String(
+      adaptiveResolution.isSettled() && currentPixelRatio === targetPixelRatio
+    );
+
     const scroll = (elapsed * 1.8) % cellSize;
     terrain.position.z = -10 + scroll;
     terrainUniforms.uTime.value = elapsed % 2048;
@@ -165,8 +191,6 @@ export function createHeroScene(
       probe.maxRenderMs = Math.max(probe.maxRenderMs ?? 0, renderMs);
     }
 
-    const nextPixelRatio = adaptiveResolution.recordFrame(deltaSeconds);
-    if (nextPixelRatio !== null) applyPixelRatio(nextPixelRatio);
   };
 
   const frameLoop = (timestamp: number) => {
@@ -191,21 +215,15 @@ export function createHeroScene(
       if (!animationFrame && !disposed) animationFrame = window.requestAnimationFrame(frameLoop);
     },
     stop,
-    resize: (nextWidth, nextHeight, pixelRatio) => {
+    resize: (nextWidth, nextHeight, _pixelRatio) => {
       width = Math.max(1, Math.round(nextWidth));
       renderHeight = Math.max(1, Math.round(nextHeight));
-      const initialPixelRatio = getHeroPixelRatio(width, renderHeight, pixelRatio, quality);
-      const maximumPixelRatio = getHeroMaxPixelRatio(
-        width,
-        renderHeight,
-        pixelRatio,
-        quality
-      );
-      adaptiveResolution = createAdaptivePixelRatioController(
-        initialPixelRatio,
-        maximumPixelRatio
-      );
-      applyPixelRatio(initialPixelRatio);
+      adaptiveResolution = createAdaptiveResolutionController(resolutionTier);
+      currentPixelRatio = getHeroTierPixelRatio(width, renderHeight, resolutionTier);
+      targetPixelRatio = currentPixelRatio;
+      applyPixelRatio(currentPixelRatio);
+      canvas.dataset.heroResolutionTier = resolutionTier;
+      canvas.dataset.heroResolutionSettled = 'false';
       camera.aspect = width / renderHeight;
       camera.fov = width < 768 ? 68 : 60;
       camera.updateProjectionMatrix();
