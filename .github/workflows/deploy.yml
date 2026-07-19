@@ -78,6 +78,8 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+    outputs:
+      page_url: ${{ steps.deployment.outputs.page_url }}
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -97,9 +99,20 @@ jobs:
       - name: Verify deployed HTML and asset MIME types
         run: node scripts/check-deployment.mjs "${{ steps.deployment.outputs.page_url }}"
 
+  # Post-deploy audit: Lighthouse tracing against the animated page is slow,
+  # so it runs isolated from the deploy job's tight timeout.
+  lighthouse:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout Lighthouse budget
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
       - name: Lighthouse CI audit
         uses: treosh/lighthouse-ci-action@3e7e23fb74242897f95c0ba9cabad3d0227b9b18 # v12
         with:
-          urls: ${{ steps.deployment.outputs.page_url }}
+          urls: ${{ needs.deploy.outputs.page_url }}
           budgetPath: ./lighthouse-budget.json
+          runs: 1
           temporaryPublicStorage: true
