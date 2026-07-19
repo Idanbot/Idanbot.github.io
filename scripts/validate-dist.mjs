@@ -81,7 +81,7 @@ const ogImage = findElements(
 )[0];
 assert(Boolean(getAttribute(ogImage ?? {}, 'content')), 'Open Graph image metadata is missing');
 
-await assertFile('og-image.svg', 'Open Graph image');
+await assertFile('og-image.png', 'Open Graph image');
 await assertFile('.nojekyll', 'GitHub Pages marker');
 const cname = (await readFile(path.join(distDirectory, 'CNAME'), 'utf8')).trim();
 assert(cname === 'idanbot.me', `CNAME must contain idanbot.me, received ${JSON.stringify(cname)}`);

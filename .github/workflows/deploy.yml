@@ -62,10 +62,10 @@ jobs:
 
       - name: Verify OG image
         run: |
-          if [ -f dist/og-image.svg ]; then
+          if [ -f dist/og-image.png ]; then
             echo "OG image found in dist"
           else
-            echo "::error::og-image.svg missing in dist — add public/og-image.svg"
+            echo "::error::og-image.png missing in dist — add public/og-image.png"
             exit 1
           fi
 
@@ -96,3 +96,10 @@ jobs:
 
       - name: Verify deployed HTML and asset MIME types
         run: node scripts/check-deployment.mjs "${{ steps.deployment.outputs.page_url }}"
+
+      - name: Lighthouse CI audit
+        uses: treosh/lighthouse-ci-action@0bab7a6e3760f2b43c16d49c35c7aad4c9f67143 # v12
+        with:
+          urls: ${{ steps.deployment.outputs.page_url }}
+          budgetPath: ./lighthouse-budget.json
+          temporaryPublicStorage: true

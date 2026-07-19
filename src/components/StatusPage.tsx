@@ -38,7 +38,7 @@ export const StatusPage = () => {
             Production surface
           </p>
           <h2 className="text-3xl font-bold text-white sm:text-4xl">
-            Live <span className="text-gradient">System Monitor</span>
+            Engineering <span className="text-gradient">Lab</span>
           </h2>
           <p className="mx-auto mt-3 max-w-2xl text-sm leading-relaxed text-muted-foreground sm:text-base">
             A lightweight status layer for this static portfolio: deployment context, runtime health,

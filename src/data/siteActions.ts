@@ -9,7 +9,7 @@ export const siteSections = [
   { id: 'hero', label: 'Profile', commandLabel: 'Go to Profile', icon: 'home' },
   { id: 'skills', label: 'Stack', commandLabel: 'Go to Stack', icon: 'layers' },
   { id: 'history', label: 'Experience', commandLabel: 'Go to Experience', icon: 'history' },
-  { id: 'monitor', label: 'Live', commandLabel: 'Go to Live status', icon: 'activity' },
+  { id: 'monitor', label: 'Engineering Lab', commandLabel: 'Go to Engineering Lab', icon: 'activity' },
 ] as const satisfies readonly {
   id: SiteSectionId;
   label: string;

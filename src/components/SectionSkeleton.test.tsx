@@ -32,14 +32,4 @@ describe('SectionSkeleton', () => {
     expect(skeleton?.getAttribute('aria-busy')).toBe('true');
     expect(skeleton?.textContent).toContain('Heartbeat data is ready to load.');
   });
-
-  it('uses the skills sizing for the skills lazy section', () => {
-    act(() => {
-      root.render(<SectionSkeleton variant="skills" />);
-    });
-
-    expect(container.firstElementChild?.className).toContain('cv-skills');
-    expect(container.firstElementChild?.className).toContain('min-h-[300px]');
-    expect(container.textContent).toContain('Cloud platforms, delivery, and observability.');
-  });
 });

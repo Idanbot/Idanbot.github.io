@@ -69,8 +69,9 @@ export function HeroBackground({
           typeof IntersectionObserver === 'undefined'
             ? undefined
             : new IntersectionObserver(
-                ([entry]) => {
-                  visible = entry.isIntersecting;
+                (entries) => {
+                  // Batched callbacks deliver oldest first; only the latest state matters.
+                  visible = entries[entries.length - 1].isIntersecting;
                   syncPlayback();
                 },
                 { rootMargin: '120px 0px', threshold: 0.02 }

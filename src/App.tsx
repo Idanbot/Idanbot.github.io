@@ -8,6 +8,8 @@ import { usePrefersReducedMotion } from './hooks/usePrefersReducedMotion';
 import { useActiveSection } from './hooks/useActiveSection';
 import { OPEN_TERMINAL_EVENT } from './lib/site-events';
 import { siteLinks } from './data/siteActions';
+import { StackSection } from './components/StackSection';
+import { GitHistory } from './components/GitHistory';
 
 type NavigatorWithHardwareHints = Navigator & {
   connection?: { saveData?: boolean };
@@ -18,17 +20,11 @@ const loadTerminalModal = () =>
   import('./components/TerminalModal').then((mod) => ({ default: mod.TerminalModal }));
 const loadCommandPalette = () =>
   import('./components/CommandPalette').then((mod) => ({ default: mod.CommandPalette }));
-const loadStackSection = () =>
-  import('./components/StackSection').then((mod) => ({ default: mod.StackSection }));
-const loadGitHistory = () =>
-  import('./components/GitHistory').then((mod) => ({ default: mod.GitHistory }));
 const loadStatusPage = () =>
   import('./components/StatusPage').then((mod) => ({ default: mod.StatusPage }));
 
 const TerminalModal = React.lazy(loadTerminalModal);
 const CommandPalette = React.lazy(loadCommandPalette);
-const StackSection = React.lazy(loadStackSection);
-const GitHistory = React.lazy(loadGitHistory);
 const StatusPage = React.lazy(loadStatusPage);
 
 const isConstrainedDevice = () => {
@@ -51,8 +47,6 @@ const prefetchOnFirstIntent = (event: PointerEvent | FocusEvent, loader: () => P
 
 const preloadTerminal = (event: React.PointerEvent<HTMLElement> | React.FocusEvent<HTMLElement>) =>
   prefetchOnFirstIntent(event.nativeEvent, loadTerminalModal);
-const preloadStack = () => loadStackSection();
-const preloadHistory = () => loadGitHistory();
 const preloadStatus = () => loadStatusPage();
 
 function App() {
@@ -126,19 +120,7 @@ function App() {
           onTerminalRequest={requestTerminal}
         />
 
-        <LazyOnVisible
-          targetId="skills"
-          prefetch={preloadStack}
-          prefetchRootMargin="-16px 0px"
-          renderRootMargin="-96px 0px"
-          fallbackViewportMargin={-96}
-          fallback={<SectionSkeleton variant="skills" />}
-          isServer={isServer}
-        >
-          <Suspense fallback={<SectionSkeleton variant="skills" />}>
-            <StackSection className="snap-start" />
-          </Suspense>
-        </LazyOnVisible>
+        <StackSection className="snap-start" />
 
         <section
           id="history"
@@ -152,19 +134,7 @@ function App() {
               A concise timeline of roles, systems, and platform work.
             </p>
           </div>
-          <LazyOnVisible
-            prefetch={preloadHistory}
-            prefetchRootMargin="160px 0px"
-            renderRootMargin="80px 0px"
-            fallbackViewportMargin={160}
-            targetId="history"
-            fallback={<SectionSkeleton variant="history" />}
-            isServer={isServer}
-          >
-            <Suspense fallback={<SectionSkeleton variant="history" />}>
-              <GitHistory />
-            </Suspense>
-          </LazyOnVisible>
+          <GitHistory />
         </section>
 
         <section id="monitor" className="cv-monitor min-h-[760px] scroll-mt-24 snap-start md:min-h-[840px]">

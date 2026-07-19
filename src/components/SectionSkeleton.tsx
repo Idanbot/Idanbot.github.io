@@ -1,27 +1,11 @@
 const variants = {
-  skills:
-    'cv-skills mx-auto min-h-[300px] max-w-5xl snap-start rounded-2xl border border-white/5 bg-white/[0.02]',
-  history:
-    'min-h-[760px] max-w-4xl mx-auto rounded-2xl border border-white/5 bg-white/[0.02] md:min-h-[820px]',
   monitor:
     'min-h-[680px] max-w-5xl mx-auto rounded-2xl border border-white/5 bg-white/[0.02] px-4 sm:px-6 md:min-h-[760px]',
 } as const;
 
 const previews = {
-  skills: {
-    eyebrow: 'Core stack',
-    title: 'Cloud platforms, delivery, and observability.',
-    body: 'Kubernetes, Terraform, GCP, AWS, CI/CD, and production systems.',
-    labels: ['GCP', 'AWS', 'Kubernetes', 'Terraform'],
-  },
-  history: {
-    eyebrow: 'Professional trajectory',
-    title: 'Cloud architecture with backend depth.',
-    body: 'Current platform work, DevOps training, and Java/Spring production systems.',
-    labels: ['WideOps', 'Platform', 'Backend'],
-  },
   monitor: {
-    eyebrow: 'Live system monitor',
+    eyebrow: 'Engineering lab',
     title: 'Heartbeat data is ready to load.',
     body: 'Deployment context and live machine health appear when this section enters view.',
     labels: ['GitHub Pages', 'Heartbeat API', 'Client cache'],

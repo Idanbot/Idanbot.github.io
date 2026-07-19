@@ -27,7 +27,7 @@ describe('DesktopNav', () => {
     });
 
     const current = container.querySelector('a[aria-current="page"]');
-    expect(current?.textContent).toBe('Live');
+    expect(current?.textContent).toBe('Engineering Lab');
     expect(current?.getAttribute('href')).toBe('#monitor');
 
     const hrefs = [...container.querySelectorAll('a')].map((link) => link.getAttribute('href'));

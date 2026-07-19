@@ -141,10 +141,10 @@ test('loads lazy sections when desktop navigation targets them', async ({ page }
   await mockHeartbeats(page);
   await page.goto('/');
 
-  await page.getByRole('link', { name: 'Live', exact: true }).click();
+  await page.getByRole('link', { name: 'Engineering Lab', exact: true }).click();
 
   await expect(page).toHaveURL(/#monitor$/);
-  await expect(page.getByRole('heading', { name: /Live System Monitor/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /Engineering Lab/i })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Live Device Heartbeats' })).toBeVisible();
   await expect(page.getByText('build-agent', { exact: true })).toBeVisible();
   await expect
@@ -152,7 +152,7 @@ test('loads lazy sections when desktop navigation targets them', async ({ page }
       page.locator('#monitor').evaluate((element) => Math.abs(element.getBoundingClientRect().top))
     )
     .toBeLessThan(180);
-  await expect(page.getByRole('link', { name: 'Live', exact: true })).toHaveAttribute(
+  await expect(page.getByRole('link', { name: 'Engineering Lab', exact: true })).toHaveAttribute(
     'aria-current',
     'page'
   );
@@ -279,7 +279,11 @@ test.describe('without JavaScript', () => {
   test('keeps meaningful prerendered content visible', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { level: 1 })).toContainText('Resilient Systems.');
-    await expect(page.getByText('Cloud platforms, delivery, and observability.')).toBeVisible();
-    await expect(page.getByText('Cloud architecture with backend depth.')).toBeVisible();
+    await expect(page.getByText('Tools and platforms I use to ship reliable systems, from clusters to observability.')).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Professional Trajectory' })).toBeVisible();
+    await expect(page.getByText('WideOps Ltd', { exact: true })).toBeVisible();
+    await expect(
+      page.getByText('Google Cloud Certified - Professional Cloud Architect')
+    ).toBeVisible();
   });
 });

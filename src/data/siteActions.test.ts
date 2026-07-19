@@ -8,7 +8,7 @@ describe('site action catalog', () => {
       'Profile',
       'Stack',
       'Experience',
-      'Live',
+      'Engineering Lab',
     ]);
   });
 
