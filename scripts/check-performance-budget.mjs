@@ -42,8 +42,8 @@ const measurements = {
 };
 
 const budgets = {
-  entryJavaScript: 140 * kibibyte,
-  initialJavaScript: 160 * kibibyte,
+  entryJavaScript: 80 * kibibyte,
+  initialJavaScript: 90 * kibibyte,
   css: 18 * kibibyte,
   fonts: 90 * kibibyte,
   heroSceneJavaScript: 140 * kibibyte,

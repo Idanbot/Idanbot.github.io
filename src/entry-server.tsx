@@ -1,11 +1,20 @@
 import React from 'react';
 import ReactDOMServer from 'react-dom/server';
-import App from './App';
+import { NavIsland } from './islands/NavIsland';
+import { HeroIsland } from './islands/HeroIsland';
+import { MonitorIsland } from './islands/MonitorIsland';
+import { FooterIsland } from './islands/FooterIsland';
+import { StaticSections } from './StaticSections';
 
-export function render() {
-  return ReactDOMServer.renderToString(
-    <React.StrictMode>
-      <App />
-    </React.StrictMode>
-  );
+const render = (element: React.ReactElement) =>
+  ReactDOMServer.renderToString(<React.StrictMode>{element}</React.StrictMode>);
+
+export function renderIslands() {
+  return {
+    nav: render(<NavIsland />),
+    hero: render(<HeroIsland />),
+    monitor: render(<MonitorIsland />),
+    staticSections: render(<StaticSections />),
+    footer: render(<FooterIsland />),
+  };
 }

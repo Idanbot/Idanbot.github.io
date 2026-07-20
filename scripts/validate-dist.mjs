@@ -33,14 +33,17 @@ async function assertFile(relativePath, label) {
   }
 }
 
-const root = findElements(
-  document,
-  (node) => node.tagName === 'div' && getAttribute(node, 'id') === 'root'
-);
-assert(root.length === 1, `expected one #root element, found ${root.length}`);
-assert((root[0]?.childNodes?.length ?? 0) > 0, '#root must contain prerendered markup');
+const islandContainers = ['nav-root', 'hero-root', 'static-sections', 'monitor-root', 'footer-root'];
+for (const id of islandContainers) {
+  const containers = findElements(
+    document,
+    (node) => node.tagName === 'div' && getAttribute(node, 'id') === id
+  );
+  assert(containers.length === 1, `expected one #${id} element, found ${containers.length}`);
+  assert((containers[0]?.childNodes?.length ?? 0) > 0, `#${id} must contain prerendered markup`);
+  assert(!html.includes(`id="${id}"></div>`), `production HTML must not contain an empty #${id}`);
+}
 assert(!html.includes('/src/main.tsx'), 'production HTML must not reference /src/main.tsx');
-assert(!html.includes('id="root"></div>'), 'production HTML must not contain an empty root');
 
 const moduleScripts = findElements(
   document,

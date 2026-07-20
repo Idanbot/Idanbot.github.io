@@ -1,4 +1,3 @@
-import { useEffect, useState } from 'react';
 import type { IconType } from 'react-icons';
 import {
   SiAmazonwebservices,
@@ -29,9 +28,7 @@ import {
   SiTypescript,
 } from 'react-icons/si';
 import { Award, ExternalLink, Layers, PauseCircle } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { usePrefersReducedMotion } from '@/hooks/usePrefersReducedMotion';
 import { profile } from '@/data/profile';
 
 const stacks: { name: string; category: string; Icon: IconType }[] = [
@@ -88,19 +85,9 @@ const categoryAccent = (category: string) => {
 type StackSectionProps = { className?: string };
 
 export const StackSection = ({ className }: StackSectionProps) => {
-  const prefersReducedMotion = usePrefersReducedMotion();
-  // Marquee loop clones render only when idle after hydration: keeps the
-  // prerendered DOM small and the clone re-render out of the critical window.
-  const [marqueeReady, setMarqueeReady] = useState(false);
-  useEffect(() => {
-    if (typeof window.requestIdleCallback === 'function') {
-      const handle = window.requestIdleCallback(() => setMarqueeReady(true));
-      return () => window.cancelIdleCallback(handle);
-    }
-    const timeout = window.setTimeout(() => setMarqueeReady(true), 200);
-    return () => window.clearTimeout(timeout);
-  }, []);
-  const marqueeStacks = prefersReducedMotion || !marqueeReady ? stacks : [...stacks, ...stacks];
+  // Static prerendered content: the marquee clones ship in the HTML and
+  // reduced-motion users get a scrollable static strip via CSS media query.
+  const marqueeStacks = [...stacks, ...stacks];
 
   return (
     <section
@@ -134,11 +121,7 @@ export const StackSection = ({ className }: StackSectionProps) => {
       </div>
 
       <div
-        className={
-          prefersReducedMotion
-            ? "relative overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-            : "stack-marquee-shell liquid-glass relative overflow-hidden rounded-2xl p-2 focus-within:overflow-x-auto focus-within:[scrollbar-width:none] focus-within:[&::-webkit-scrollbar]:hidden"
-        }
+        className="stack-marquee-shell liquid-glass relative overflow-hidden rounded-2xl p-2 focus-within:overflow-x-auto focus-within:[scrollbar-width:none] focus-within:[&::-webkit-scrollbar]:hidden"
         aria-label="Core stack carousel"
       >
         <div
@@ -150,51 +133,39 @@ export const StackSection = ({ className }: StackSectionProps) => {
           aria-hidden
         />
         <ul
-          className={`m-0 flex h-[122px] list-none flex-nowrap items-stretch gap-3 px-1 py-2 md:h-[132px] md:gap-4 ${prefersReducedMotion ? '' : 'stack-marquee'}`}
-          aria-describedby={!prefersReducedMotion ? 'stack-inspect-hint' : undefined}
+          className="stack-marquee m-0 flex h-[122px] list-none flex-nowrap items-stretch gap-3 px-1 py-2 md:h-[132px] md:gap-4"
+          aria-describedby="stack-inspect-hint"
         >
         {marqueeStacks.map((item, index) => {
           const Icon = item.Icon;
           return (
             <li
               key={`${item.name}-${index}`}
-              aria-hidden={!prefersReducedMotion && index >= stacks.length}
-              tabIndex={!prefersReducedMotion && index < stacks.length ? 0 : -1}
+              aria-hidden={index >= stacks.length}
+              tabIndex={index < stacks.length ? 0 : -1}
               aria-label={`${item.name}, ${item.category}`}
-              className="list-none shrink-0 rounded-lg outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--stack-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+              className={`stack-card ${categoryAccent(item.category)}`}
             >
-              <Card className={`premium-card stack-card-lid group h-full w-[128px] border border-white/10 bg-card/55 backdrop-blur-sm transition-[border-color,box-shadow,background-color,filter,transform] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:border-[color:var(--stack-accent)] hover:bg-white/[0.055] hover:shadow-[0_18px_58px_-32px_var(--stack-accent)] focus-within:border-[color:var(--stack-accent)] max-sm:hover:translate-y-0 max-sm:hover:shadow-none max-sm:hover:brightness-[1.04] motion-reduce:transition-none md:w-[148px] ${categoryAccent(item.category)}`}>
-                <CardContent className="flex h-full flex-col items-center justify-center gap-1.5 p-3 text-center md:gap-2">
-                  <span className="flex size-10 origin-center items-center justify-center rounded-xl bg-white/[0.06] ring-1 ring-white/10 transition-[background-color,box-shadow,transform] duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] group-hover:bg-[color:var(--stack-accent-soft)] group-hover:shadow-[0_0_26px_-12px_var(--stack-accent)] group-hover:ring-[color:var(--stack-accent-border)] motion-reduce:group-hover:scale-100">
-                    <Icon
-                      className="size-5 text-muted-foreground transition-colors duration-150 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:text-[color:var(--stack-accent)] group-hover:drop-shadow-[0_0_10px_var(--stack-accent)]"
-                      aria-hidden
-                    />
+              <div className="premium-card stack-card-lid">
+                <div className="stack-card-content">
+                  <span className="stack-card-icon-shell">
+                    <Icon className="stack-card-icon" aria-hidden />
                   </span>
-                  <Badge
-                    variant="muted"
-                    className="font-mono text-[9px] uppercase tracking-wider transition-colors duration-150 ease-out group-hover:border-[color:var(--stack-accent-border)] group-hover:text-[color:var(--stack-accent)] sm:text-[10px]"
-                  >
-                    {item.category}
-                  </Badge>
-                  <div className="text-xs font-semibold leading-snug text-card-foreground transition-colors duration-150 ease-out group-hover:text-foreground sm:text-sm">
-                    {item.name}
-                  </div>
-                </CardContent>
-              </Card>
+                  <span className="stack-card-badge">{item.category}</span>
+                  <div className="stack-card-name">{item.name}</div>
+                </div>
+              </div>
             </li>
           );
         })}
         </ul>
-        {!prefersReducedMotion ? (
-          <div
-            id="stack-inspect-hint"
-            className="stack-inspect-hint pointer-events-none absolute bottom-2 right-3 z-[2] hidden items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-white/48 backdrop-blur-md transition-colors duration-200 md:inline-flex"
-          >
-            <PauseCircle className="size-3" aria-hidden />
-            Hover to pause
-          </div>
-        ) : null}
+        <div
+          id="stack-inspect-hint"
+          className="stack-inspect-hint pointer-events-none absolute bottom-2 right-3 z-[2] hidden items-center gap-1.5 rounded-full border border-white/10 bg-black/50 px-2.5 py-1 text-[10px] font-medium uppercase tracking-[0.14em] text-white/48 backdrop-blur-md transition-colors duration-200 md:inline-flex"
+        >
+          <PauseCircle className="size-3" aria-hidden />
+          Hover to pause
+        </div>
       </div>
 
       <div className="mx-auto mt-6 max-w-2xl md:mt-8">

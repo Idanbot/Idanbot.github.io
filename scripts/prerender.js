@@ -18,24 +18,32 @@ async function main() {
 
     console.log('Loading SSR render function...');
     const serverEntryPath = path.resolve(serverDir, 'entry-server.js');
-    const { render } = await import(serverEntryPath);
+    const { renderIslands } = await import(serverEntryPath);
 
     console.log('Reading dist/index.html...');
     const templatePath = path.resolve(root, 'dist/index.html');
     let html = fs.readFileSync(templatePath, 'utf-8');
 
-    console.log('Rendering app...');
-    const appHtml = render();
-    if (!appHtml.trim()) throw new Error('SSR renderer returned empty markup');
+    console.log('Rendering islands...');
+    const islands = renderIslands();
 
     console.log('Injecting pre-rendered content...');
-    const rootMarker = '<div id="root"></div>';
-    const markerCount = html.split(rootMarker).length - 1;
-    if (markerCount !== 1) {
-      throw new Error(`Expected one empty root marker, found ${markerCount}`);
+    const containers = {
+      nav: 'nav-root',
+      hero: 'hero-root',
+      monitor: 'monitor-root',
+      staticSections: 'static-sections',
+      footer: 'footer-root',
+    };
+    for (const [key, id] of Object.entries(containers)) {
+      const marker = `<div id="${id}"></div>`;
+      const markerCount = html.split(marker).length - 1;
+      if (markerCount !== 1) throw new Error(`Expected one #${id} marker, found ${markerCount}`);
+      const islandHtml = islands[key];
+      if (!islandHtml?.trim()) throw new Error(`SSR renderer returned empty markup for ${key}`);
+      html = html.replace(marker, `<div id="${id}">${islandHtml}</div>`);
+      if (html.includes(marker)) throw new Error(`Empty #${id} marker remained after prerendering`);
     }
-    html = html.replace(rootMarker, `<div id="root">${appHtml}</div>`);
-    if (html.includes(rootMarker)) throw new Error('Empty root marker remained after prerendering');
 
     console.log('Inlining critical CSS...');
     const stylesheetLinkPattern = /<link rel="stylesheet"[^>]*href="\/(assets\/[^"]+\.css)"[^>]*>/;

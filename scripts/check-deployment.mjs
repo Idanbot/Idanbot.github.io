@@ -22,7 +22,9 @@ async function checkDeployment() {
 
   const html = await pageResponse.text();
   if (html.includes('/src/main.tsx')) throw new Error('deployed HTML still references /src/main.tsx');
-  if (!/<div id=["']root["']>\s*<[^/]/i.test(html)) throw new Error('deployed root is not prerendered');
+  if (!/<div id=["']hero-root["']>\s*<[^/]/i.test(html)) {
+    throw new Error('deployed hero island is not prerendered');
+  }
 
   const scriptSource = extractAttribute(
     html,

@@ -40,8 +40,21 @@
     <meta name="twitter:image" content="https://idanbot.me/og-image.png" />
     <meta name="twitter:image:alt" content="Idan Botbol — Cloud Architect and DevOps Engineer portfolio" />
   </head>
-  <body>
-    <div id="root"></div>
+  <body
+    class="relative min-h-screen overflow-x-hidden bg-background text-foreground selection:bg-primary/25"
+  >
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    <div id="nav-root"></div>
+    <main
+      id="main-content"
+      tabindex="-1"
+      class="relative w-full scroll-smooth snap-y snap-proximity outline-none md:snap-mandatory"
+    >
+      <div id="hero-root"></div>
+      <div id="static-sections"></div>
+      <div id="monitor-root"></div>
+    </main>
+    <div id="footer-root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
