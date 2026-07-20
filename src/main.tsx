@@ -23,3 +23,11 @@ for (const [id, element] of islands) {
     createRoot(container).render(app);
   }
 }
+
+// Long-term caching for fingerprinted assets; registered after load so it
+// never competes with the critical path.
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}

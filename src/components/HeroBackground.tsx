@@ -29,7 +29,6 @@ export function HeroBackground({
     const idleWindow = window as IdleWindow;
     let cancelled = false;
     let idleHandle: number | undefined;
-    let animationFrame = 0;
     let controller: HeroSceneController | undefined;
     let removeSceneListeners = () => {};
 
@@ -109,16 +108,28 @@ export function HeroBackground({
       }
     };
 
-    if (idleWindow.requestIdleCallback) {
-      idleHandle = idleWindow.requestIdleCallback(() => void startScene(), { timeout: 500 });
+    // Start only after the page has loaded and the main thread goes idle
+    // (2s fallback), keeping the scene out of the critical rendering window.
+    let timeout = 0;
+    const scheduleSceneStart = () => {
+      if (idleWindow.requestIdleCallback) {
+        idleHandle = idleWindow.requestIdleCallback(() => void startScene(), { timeout: 2000 });
+      } else {
+        timeout = window.setTimeout(() => void startScene(), 2000);
+      }
+    };
+
+    if (document.readyState === 'complete') {
+      scheduleSceneStart();
     } else {
-      animationFrame = window.requestAnimationFrame(() => void startScene());
+      window.addEventListener('load', scheduleSceneStart, { once: true });
     }
 
     return () => {
       cancelled = true;
+      window.removeEventListener('load', scheduleSceneStart);
       if (idleHandle !== undefined) idleWindow.cancelIdleCallback?.(idleHandle);
-      if (animationFrame) window.cancelAnimationFrame(animationFrame);
+      if (timeout) window.clearTimeout(timeout);
       removeSceneListeners();
       controller?.dispose();
     };
